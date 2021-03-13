@@ -1,12 +1,14 @@
 require 'date'
 require 'telegram/bot'
 require 'lingua/stemmer'
+require 'rufus-scheduler'
 
 # Globals
 load('secrets.rb')
 
 $waking_up = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 $trStemmer = Lingua::Stemmer.new(:language => "tr")
+$scheduler = Rufus::Scheduler.new
 
 # Functions
 def logger(text)
@@ -25,7 +27,17 @@ end
 # Main code
 logger("Buruki uyanıyor!")
 
+# Telegram loop
 Telegram::Bot::Client.run($token) do |bot|
+	# Scheduler
+	$scheduler.every '30m' do
+		reply = ["Yaa kendi başıma da yazabiliyorum aq", "Anlatın amk", "Melih napıyorsun?", "Saat #{DateTime.now.strftime("%H:%M")} olmuş hala uyanık mısınız lan"].sample
+		chatid = -483338367
+		logger ">>> chat##{chatid}: #{reply}"
+		bot.api.send_message(chat_id: chatid, text: reply)
+	end
+
+	# Replies
 	bot.listen do |message|
 		case message
 		when Telegram::Bot::Types::InlineQuery
@@ -69,6 +81,25 @@ Telegram::Bot::Client.run($token) do |bot|
 			when /^(Naber Mert)$|^(Mert nasılsın)$|^(Naptın Mert)$|^(Mert naber ya)$|^(Nasıl oldun Mert)$|^(Nasılsın Mert)$/i then reply = "İyiyim kardeş seni sormalı"
 			when /^(İyiyim)$|^(Ben de iyiyim)$|^(İyiyim Mert)$/i then reply = "İyi kal gardaşş"
 			when /^(Bak)$|^(\(o\)\)\))$/i then reply = "(o)))"
+			when /^(Görüşürüz Mert)$|^(Mert görüşürüz)$|^(Görüşürüz beyler)$/i then reply = "Görüşürüz kardeşim"
+			when /\b(Maya'yı sik)$|\b(Mayayı sik)$/i then reply = "Ne diyon lan aq Maya benim bacım sayılır. Seni sikerim doğru konuş"
+			when /^Mert, Melih'i sik$/i then reply = "Meliiih gel attaya gidecez"
+			when /^Sinirim çok bozuk$/i then reply = "Sinirlerini topla kardeş"
+			when /^Yarın buluşalım mı$/i then reply = "Buluşalım ben de geliyorum"
+			when /^Yarın erken kalkacağım$/i then reply = "Git yat uyu o zaman"
+			when /^(Mert amk)$|^(Mert senin amk)$|^(Mert senin ben amk)$|^(Senin ben amk Mert)$/i then reply = "Ben de senin amk"
+			when /^Yazılım$/i then reply = "Yazılmayalım"
+			when /^Seni seviyorum kral$/i then reply = "Eyvallah tosun ben de seni seviyim"
+			when /^En iyi dostumsun$/i then reply = "Sen benim kardeşimsin kardeşim. Ölümüne"
+			when /^Hastayım$/i then reply = "Geçmiş olsun kardeşim"
+			when /^Mert'e vurdururuz$/i then reply = "Kim bana vurduruyor şimdi ona göre şeyetcem"
+			when /^Mert neyin var$/i then reply = "23cm kalin sert büyük yarragimi görmek istermisin suan dimdik ve oldukça sert"
+			when /^Görmek isterim$/i then reply = "Ezan bitsin hemen gösterecem"
+			when /^Adamsın lan Mert$/i then reply = "Eyvallah kardeşim"
+			when /^👊$/i then reply = "👊🏽"
+			when /(Canım sıkılıyor)$|(canım sıkıldı)$/i
+				bot.api.send_photo(chat_id: message.chat.id, photo: Faraday::UploadIO.new('assets/images/Kurtuluş.jpg', 'image/jpeg'))
+			when /([asdfghjklşi]){4}\w+/i then reply = ["dkajflaskdjf", "kjdsalfjaldksfjalk", "sdkjlsdfjl", "dsaşfkjsaldf", "sakjdkasjd", "dsşafjasdkfs"].sample
 			
 			# Words
 			when /\bAm\b/i then reply = "Lam kim dedi onu nerede"
