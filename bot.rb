@@ -11,7 +11,6 @@ $waking_up = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 $trStemmer = Lingua::Stemmer.new(:language => "tr")
 $scheduler = Rufus::Scheduler.new
 
-
 $states = {
 	0 => "BASA_DON"
 }
@@ -108,15 +107,19 @@ Telegram::Bot::Client.run($token) do |bot|
 			case message.text
 			# Priority 1: Commands
 			when /^\/start$/i then reply = "Türkçe konuş"
-			when /^\/uyu$/i
+			when /^\/kafayı göm$/i
 				if message.from.id == $master_id
-					reply = "İyi geceler kral"
+					reply = "Gömemem be kardeş"
 				end
 			when /^\/kafayı çek$/i
 				if message.from.id == $master_id
-					$diyalog = JSON.load_file "assets/dialog.json"
-					$cevaplar = JSON.load_file "assets/answers.json"
-					reply = "Çektim çektim"
+					begin
+						$diyalog = JSON.load_file "assets/dialog.json"
+						$cevaplar = JSON.load_file "assets/answers.json"
+						reply = "Çektim çektim"
+					rescue Exception => e
+						reply = "Çekemedim"
+					end
 				end
 
 			# Priority 2: Quick responses
