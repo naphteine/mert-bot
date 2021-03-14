@@ -38,6 +38,10 @@ def diyalog_kur(user_id, message)
 		$states[user_id] = "BASA_DON"
 	end
 
+	if message.to_s.strip.empty?
+		return ""
+	end
+
 	state = $states[user_id]
 	
 	# Check dialogs and find ID == state
