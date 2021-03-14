@@ -4,6 +4,14 @@ require 'lingua/stemmer'
 require 'rufus-scheduler'
 require 'json'
 
+# Pure
+def logger(text)
+	puts "#{DateTime.now} #{text}"
+	open('logs/buruki.log', 'a') { |f|
+		f.puts "#{DateTime.now} #{text}"
+	}
+end
+
 # Globals
 load('secrets.rb')
 
@@ -20,18 +28,16 @@ $responses = JSON.load_file "assets/answers.json"
 
 $caricatures = Dir.glob('assets/img/caricatures/*')
 
-$images = {
-
-}
-
-# Functions
-def logger(text)
-	puts "#{DateTime.now} #{text}"
-	open('logs/buruki.log', 'a') { |f|
-		f.puts "#{DateTime.now} #{text}"
+begin
+	$images = JSON.load_file('assets/image_hashes.json')
+	logger("DEBUG: #{$images.length} fotoğraf kimliği dosyadan yüklendi.")
+rescue
+	$images = {
 	}
+	logger("DEBUG: Fotoğraf kimlikleri yüklenemedi! Yenisi yaratıldı.")
 end
 
+# Functions
 def geri_sok(mesaj)
 	sonsuz_mesaj = mesaj[/(.*)\s/,1][/(.*)\s/,1]
 	eksiz_kelime = $trStemmer.stem(sonsuz_mesaj.split.last)
@@ -184,7 +190,9 @@ begin
 				unless image.to_s.strip.empty?
 					logger ">>> chat##{message.chat.id} #{message.from.id}@#{message.from.username}: IMG #{image}"
 					if $images.has_key?(image) then bot.api.send_photo(chat_id: message.chat.id, photo: $images[image])
-					else $images[image] = bot.api.send_photo(chat_id: message.chat.id, photo: Faraday::UploadIO.new(image, 'image/jpg'))['result']['photo'][1]['file_id']
+					else
+						sent = bot.api.send_photo(chat_id: message.chat.id, photo: Faraday::UploadIO.new(image, 'image/jpg'))
+						$images[image] = sent['result']['photo'][sent['result']['photo'].length - 1]['file_id']
 					end
 				end
 
@@ -200,3 +208,14 @@ rescue Exception => e
 end
 
 logger("Buruki uyumaya gidiyor..")
+
+begin
+	File.open('assets/image_hashes.json', "w+") do |f|
+		f << $images.to_json
+	end
+	logger("DEBUG: #{$images.length} fotoğraf kimliği kaydedildi.")
+rescue Exception => e
+	logger("EXCEPTION: Fotoğraf kimliği kaydederken hata: #{e}")
+end
+
+logger("İyi geceler. -Buruki")
