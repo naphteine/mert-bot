@@ -90,7 +90,7 @@ logger("Buruki uyanıyor!")
 begin
 	Telegram::Bot::Client.run($token) do |bot|
 		# Scheduler
-		$scheduler.every '1685s' do
+		$scheduler.every '8011s' do
 			reply = ["Yine çok neşelisiniz amk yazın hadi", "Amına koyem yazın gençlik", "Yine çok neşelisiniz. Yazsanıza aq", "Anlatın amk", "Saat #{DateTime.now.strftime("%H:%M")} olmuş, napıyorsunuz gençler"].sample
 			logger ">>> chat##{$master_chat_id}: #{reply}"
 			bot.api.send_message(chat_id:  $master_chat_id, text: reply)
