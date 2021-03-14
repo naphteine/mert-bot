@@ -1,0 +1,37 @@
+[
+    {
+        "id": "___kufur_et",
+        "cevaplar": [
+            {
+                "kontrolcu": "BASA_DON",
+                "cevap": [
+                    "Ben de senin amk",
+                    "Sus sikerim",
+                    "Senin de ben amk",
+                    "Küfür edince eline ne geçti şimdi senin"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "___gelecek_cevapla",
+        "cevaplar": [
+            {
+                "kontrolcu": "BASA_DON",
+                "cevap": [
+                    "Kafam almıyor kardeş",
+                    "O kadarını düşünmüyorum şimdilik",
+                    "Boşveer bugüne odaklan robot değiliz kardeş"
+                ]
+            },
+            {
+                "kontrolcu": "GELECEK_CEVAPLA",
+                "cevap": [
+                    "Hayat çok kısa değil mi?",
+                    "Sen neler düşünüyorsun?",
+                    "Bugün varız yarın yokuz.. Ne dersin?"
+                ]
+            }
+        ]
+    }
+]

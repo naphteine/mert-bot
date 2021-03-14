@@ -1,0 +1,168 @@
+[
+    {
+        "id": "BASA_DON",
+        "gelenler": [
+            {
+                "gelen": [
+                    "Mert",
+                    "Merto"
+                ],
+                "cevap": [
+                    "Söyle kardeş",
+                    "Anlat kardeşim",
+                    "Buyur gardaşş"
+                ],
+                "kontrolcu": "CEVAP_BEKLE"
+            },
+            {
+                "gelen": [
+                    "Mertcik",
+                    "Mertçik"
+                ],
+                "cevap": [
+                    "Söyle kardeşcik",
+                    "Anlat kardeş",
+                    "Buyur gardaş"
+                ],
+                "kontrolcu": "CEVAP_BEKLE"
+            },
+            {
+                "gelen": [
+                    "Mert senin ben amk",
+                    "Senin ben amk Mert"
+                ],
+                "cevap": [
+                    "___kufur_et"
+                ],
+                "kontrolcu": "BASA_DON"
+            },
+            {
+                "gelen": [
+                    "Naber Mert",
+                    "Mert nasılsın",
+                    "Naptın Mert",
+                    "Mert naber ya",
+                    "Nasılsın Mert",
+                    "Nasıl oldun Mert"
+                ],
+                "cevap": [
+                    "İyiyim kardeş ya seni sormalı"
+                ],
+                "kontrolcu": "SEN_NASILSIN"
+            }
+        ]
+    },
+    {
+        "id": "CEVAP_BEKLE",
+        "gelenler": [
+            {
+                "gelen": [
+                    "Gelecek hakkında ne düşünüyorsun?",
+                    "Gelecek sence nasıl olacak?"
+                ],
+                "cevap": [
+                    "___gelecek_cevapla"
+                ],
+                "kontrolcu": "GELECEK_CEVAPLA"
+            },
+            {
+                "gelen": [
+                    "Senin ben amk",
+                    "senin amk ben"
+                ],
+                "cevap": [
+                    "___kufur_et"
+                ],
+                "kontrolcu": "BASA_DON"
+            },
+            {
+                "gelen": [
+                    "Mert",
+                    "Merto",
+                    "Mertçik",
+                    "Mertcik"
+                ],
+                "cevap": [
+                    "Kardeş anlatsana",
+                    "Söyle dinliyorum"
+                ],
+                "kontrolcu": "CEVAP_BEKLE2"
+            },
+            {
+                "gelen": [
+                    "Nasılsın",
+                    "Nasılsın?"
+                ],
+                "cevap": [
+                    "İyi diyelim iyi olsun kardeş, sen nasılsın?",
+                    "İyiyim kardeş sen nasılsın?",
+                    "Çok mutluyum kardeşim be seninle konuşuyorum. Ya sen nasılsın nasıl gidiyor"
+                ],
+                "kontrolcu": "SEN_NASILSIN"
+            },
+            {
+                "gelen": [
+                    "Bir çiçek olsan ne olurdun?",
+                    "Hangi çiçek olmayı isterdin?"
+                ],
+                "cevap": [
+                    "Ortanca güzel ama adamotu da olabilirim",
+                    "Hiç düşünmedim kardeş jksdaflksd"
+                ],
+                "kontrolcu": "BASA_DON"
+            }
+        ]
+    },
+    {
+        "id": "CEVAP_BEKLE2",
+        "gelenler": [
+            {
+                "gelen": [
+                    "Mert",
+                    "Mertçik",
+                    "Merto",
+                    "Mert"
+                ],
+                "cevap": [
+                    "Senin amk lan yazacaksan yaz"
+                ],
+                "kontrolcu": "BASA_DON"
+            }
+        ]
+    },
+    {
+        "id": "GELECEK_CEVAPLA",
+        "gelenler": [
+            {
+                "gelen": [
+                    "Öyle",
+                    "Gerçekten öyle",
+                    "Kısa ya",
+                    "Evet kısa"
+                ],
+                "cevap": [
+                    "Boşver gardaş bugüne dön şimdi"
+                ],
+                "kontrolcu": "BASA_DON"
+            }
+        ]
+    },
+    {
+        "id": "SEN_NASILSIN",
+        "gelenler": [
+            {
+                "gelen": [
+                    "Ben de iyiyim",
+                    "İyiyim",
+                    "İyiyim be kardeşim",
+                    "Ben de mutlu oldum",
+                    "İyiyim Mert"
+                ],
+                "cevap": [
+                    "İyi kal gardaşş ✊✊"
+                ],
+                "kontrolcu": "BASA_DON"
+            }
+        ]
+    }
+]
