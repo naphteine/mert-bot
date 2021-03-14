@@ -20,6 +20,10 @@ $responses = JSON.load_file "assets/answers.json"
 
 $caricatures = Dir.glob('assets/img/caricatures/*')
 
+$images = {
+
+}
+
 # Functions
 def logger(text)
 	puts "#{DateTime.now} #{text}"
@@ -160,7 +164,7 @@ begin
 				when /^Adamsın lan Mert$/i then reply = "Eyvallah kardeşim"
 				when /^👊$/i then reply = "👊🏽"
 				when /(Canım sıkılıyor)$|(canım sıkıldı)$/i
-					bot.api.send_photo(chat_id: message.chat.id, photo: Faraday::UploadIO.new($caricatures.sample, 'image/jpeg'), reply_to_message_id: message.message_id)
+					image = $caricatures.sample
 				when /([asdfghjklşi]){6}\w+/i then reply = ["dkajflaskdjf", "kjdsalfjaldksfjalk", "sdkjlsdfjl", "dsaşfkjsaldf", "sakjdkasjd", "dsşafjasdkfs"].sample
 
 				# Priority 3: Dialog system
@@ -176,7 +180,14 @@ begin
 					end
 				end
 
-				# Send the message, if it exists
+				# Send messages/photos, if it exists
+				unless image.to_s.strip.empty?
+					logger ">>> chat##{message.chat.id} #{message.from.id}@#{message.from.username}: IMG #{image}"
+					if $images.has_key?(image) then bot.api.send_photo(chat_id: message.chat.id, photo: $images[image])
+					else $images[image] = bot.api.send_photo(chat_id: message.chat.id, photo: Faraday::UploadIO.new(image, 'image/jpg'))['result']['photo'][1]['file_id']
+					end
+				end
+
 				unless reply.to_s.strip.empty?
 					logger ">>> chat##{message.chat.id} #{message.from.id}@#{message.from.username}: #{reply}"
 					bot.api.send_message(chat_id: message.chat.id, text: reply)
