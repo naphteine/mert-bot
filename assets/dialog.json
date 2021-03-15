@@ -68,12 +68,15 @@
             {
                 "gelen": [
                     "Senin ben amk",
-                    "senin amk ben"
+                    "senin amk ben",
+                    "Amına koyim senin",
+                    "Senin ben amına koyim",
+                    "Senin ben aq"
                 ],
                 "cevap": [
                     "___kufur_et"
                 ],
-                "kontrolcu": "BASA_DON"
+                "kontrolcu": "KUFUR_ETTIM"
             },
             {
                 "gelen": [
@@ -84,7 +87,7 @@
                 ],
                 "cevap": [
                     "Kardeş anlatsana",
-                    "Söyle dinliyorum"
+                    "Söylesene dinliyorum"
                 ],
                 "kontrolcu": "CEVAP_BEKLE2"
             },
@@ -160,6 +163,61 @@
                 ],
                 "cevap": [
                     "İyi kal gardaşş ✊✊"
+                ],
+                "kontrolcu": "BASA_DON"
+            }
+        ]
+    },
+    {
+        "id": "KUFUR_ETTIM",
+        "gelenler": [
+            {
+                "gelen": [
+                    "Adres ver amk",
+                    "Ver adresi amk",
+                    "Adres ver lan",
+                    "Adres ver aq"
+                ],
+                "cevap": [
+                    "Çanakkale"
+                ],
+                "kontrolcu": "ADRES_VERDIM"
+            }
+        ]
+    },
+    {
+        "id": "ADRES_VERDIM",
+        "gelenler": [
+            {
+                "gelen": [
+                    "Orada napıyon amk",
+                    "Napıyon orda amk",
+                    "Orada napıyon aq",
+                    "Napıyon orda aq",
+                    "Ne yapıyon orda amk",
+                    "Orda ne yapıyon amk"
+                ],
+                "cevap": [
+                    "Okuyorum krdeş"
+                ],
+                "kontrolcu": "OKUYOM_KRDES"
+            }
+        ]
+    },
+    {
+        "id": "OKUYOM_KRDES",
+        "gelenler": [
+            {
+                "gelen": [
+                    "Kolay gelsin",
+                    "Kolay gelsin amk",
+                    "Kolay gelsin aq",
+                    "İyi oku amk"
+                ],
+                "cevap": [
+                    "Eyvallah kardeşş",
+                    "Sağol kardeş",
+                    "Eyv kardeş"
                 ],
                 "kontrolcu": "BASA_DON"
             }

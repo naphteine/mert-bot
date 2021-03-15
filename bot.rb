@@ -19,12 +19,10 @@ $waking_up = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 $trStemmer = Lingua::Stemmer.new(:language => "tr")
 $scheduler = Rufus::Scheduler.new
 
-$states = {
-	0 => "BASA_DON"
-}
+$states = Hash.new
 
 $dialog = JSON.load_file "assets/dialog.json"
-$responses = JSON.load_file "assets/answers.json"
+$answers = JSON.load_file "assets/answers.json"
 
 $caricatures = Dir.glob('assets/img/caricatures/*')
 
@@ -45,6 +43,8 @@ def geri_sok(mesaj)
 end
 
 def diyalog_kur(user_id, message)
+	answer = ""
+
 	# Check hash and get user state
 	if $states.has_key?(user_id) == false
 		$states[user_id] = "BASA_DON"
@@ -57,11 +57,22 @@ def diyalog_kur(user_id, message)
 	state = $states[user_id]
 	
 	# Check dialogs and find ID == state
-	gelenler = $dialog.find { |h1| h1['id'] == state }['gelenler']
+	begin
+		gelenler = $dialog.find { |h1| h1['id'] == state }['gelenler']
+	rescue Exception => e
+		logger("EXCEPTION: Diyalog ID #{state} yok! #{e}")
+		return ""
+	end
 
 	unless gelenler.to_s.strip.empty?
 		# Check every possible messages for a match
-		find_matches = gelenler.find { |h1| h1['gelen'].find { |h2| h2.downcase==message.downcase } }
+		begin
+			find_matches = gelenler.find { |h1| h1['gelen'].find { |h2| h2.downcase==message.downcase } }
+		rescue Exception => e
+			logger("EXCEPTION: Mesaj #{message} yok! #{e}")
+			return ""
+		end
+		
 
 		unless find_matches.to_s.strip.empty?
 			# Update state
@@ -72,7 +83,12 @@ def diyalog_kur(user_id, message)
 
 			# Post-process response, if starts with "___"
 			if answer[0, 3] == "___"
-				answers_to_process = $answers.find {|h1| h1['id']==cevap}['cevaplar'].sample
+				begin
+					answers_to_process = $answers.find {|h1| h1['id']==answer}['cevaplar'].sample
+				rescue Exception => e
+					logger("EXCEPTION: Cevap #{answer} yok! #{e}")
+					return ""
+				end
 				
 				$states[user_id] = answers_to_process['kontrolcu']
 				processed_answer = answers_to_process['cevap'].sample.strip
@@ -131,8 +147,8 @@ begin
 				when /^\/kafayı çek$/i
 					if message.from.id == $master_id
 						begin
-							$diyalog = JSON.load_file "assets/dialog.json"
-							$cevaplar = JSON.load_file "assets/answers.json"
+							$dialog = JSON.load_file "assets/dialog.json"
+							$responses = JSON.load_file "assets/answers.json"
 							$caricatures = Dir.glob('assets/caricatures/*')
 							reply = "Çektim çektim"
 						rescue Exception => e
