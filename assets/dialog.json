@@ -94,7 +94,8 @@
             {
                 "gelen": [
                     "Nasılsın",
-                    "Nasılsın?"
+                    "Nasılsın?",
+                    "Naber"
                 ],
                 "cevap": [
                     "İyi diyelim iyi olsun kardeş, sen nasılsın?",
@@ -113,6 +114,16 @@
                     "Hiç düşünmedim kardeş jksdaflksd"
                 ],
                 "kontrolcu": "BASA_DON"
+            },
+            {
+                "gelen": [
+                    "Sen ibne misin",
+                    "Sen ibne misin?"
+                ],
+                "cevap": [
+                    "Elhamdürillah müslümanım kardaş"
+                ],
+                "kontrolcu": "IBNE_MISIN"
             }
         ]
     },
@@ -121,13 +132,63 @@
         "gelenler": [
             {
                 "gelen": [
-                    "Mert",
-                    "Mertçik",
-                    "Merto",
-                    "Mert"
+                    "Gelecek hakkında ne düşünüyorsun?",
+                    "Gelecek sence nasıl olacak?"
                 ],
                 "cevap": [
-                    "Senin amk lan yazacaksan yaz"
+                    "___gelecek_cevapla"
+                ],
+                "kontrolcu": "GELECEK_CEVAPLA"
+            },
+            {
+                "gelen": [
+                    "Senin ben amk",
+                    "senin amk ben",
+                    "Amına koyim senin",
+                    "Senin ben amına koyim",
+                    "Senin ben aq",
+                    "Senin amk",
+                    "Senin aq"
+                ],
+                "cevap": [
+                    "___kufur_et"
+                ],
+                "kontrolcu": "KUFUR_ETTIM"
+            },
+            {
+                "gelen": [
+                    "Mert",
+                    "Merto",
+                    "Mertçik",
+                    "Mertcik"
+                ],
+                "cevap": [
+                    "Senin amk lan yazacaksan yaz",
+                    "Amk ne var ne"
+                ],
+                "kontrolcu": "BASA_DON"
+            },
+            {
+                "gelen": [
+                    "Nasılsın",
+                    "Nasılsın?",
+                    "Naber"
+                ],
+                "cevap": [
+                    "İyi diyelim iyi olsun kardeş, sen nasılsın?",
+                    "İyiyim kardeş sen nasılsın?",
+                    "Çok mutluyum kardeşim be seninle konuşuyorum. Ya sen nasılsın nasıl gidiyor"
+                ],
+                "kontrolcu": "SEN_NASILSIN"
+            },
+            {
+                "gelen": [
+                    "Bir çiçek olsan ne olurdun?",
+                    "Hangi çiçek olmayı isterdin?"
+                ],
+                "cevap": [
+                    "Ortanca güzel ama adamotu da olabilirim",
+                    "Hiç düşünmedim kardeş jksdaflksd"
                 ],
                 "kontrolcu": "BASA_DON"
             }
@@ -165,6 +226,15 @@
                     "İyi kal gardaşş ✊✊"
                 ],
                 "kontrolcu": "BASA_DON"
+            },
+            {
+                "gelen": [
+                    "Mert"
+                ],
+                "cevap": [
+                    "Söyle kardeş"
+                ],
+                "kontrolcu": "CEVAP_BEKLE"
             }
         ]
     },
@@ -182,6 +252,24 @@
                     "Çanakkale"
                 ],
                 "kontrolcu": "ADRES_VERDIM"
+            },
+            {
+                "gelen": [
+                    "Mert"
+                ],
+                "cevap": [
+                    "Ne var amk"
+                ],
+                "kontrolcu": "CEVAP_BEKLE"
+            },
+            {
+                "gelen": [
+                    "Abi özür"
+                ],
+                "cevap": [
+                    "Affedildin ksfdk"
+                ],
+                "kontrolcu": "BASA_DON"
             }
         ]
     },
@@ -195,7 +283,8 @@
                     "Orada napıyon aq",
                     "Napıyon orda aq",
                     "Ne yapıyon orda amk",
-                    "Orda ne yapıyon amk"
+                    "Orda ne yapıyon amk",
+                    "Orada ne yapıyon amk"
                 ],
                 "cevap": [
                     "Okuyorum krdeş"
@@ -218,6 +307,52 @@
                     "Eyvallah kardeşş",
                     "Sağol kardeş",
                     "Eyv kardeş"
+                ],
+                "kontrolcu": "BASA_DON"
+            }
+        ]
+    },
+    {
+        "id": "IBNE_MISIN",
+        "gelenler": [
+            {
+                "gelen": [
+                    "Amin"
+                ],
+                "cevap": [
+                    "Cümlemize, sen?"
+                ],
+                "kontrolcu": "CUMLEMIZE_SEN"
+            },
+            {
+                "gelen": [
+                    "Mert"
+                ],
+                "cevap": [
+                    "Söyle kardeş"
+                ],
+                "kontrolcu": "BASA_DON"
+            }
+        ]
+    },
+    {
+        "id": "CUMLEMIZE_SEN",
+        "gelenler": [
+            {
+                "gelen": [
+                    "Ben de Allah'a şükür putperestim"
+                ],
+                "cevap": [
+                    "İnşallah kardeşim"
+                ],
+                "kontrolcu": "BASA_DON"
+            },
+            {
+                "gelen": [
+                    "Mert"
+                ],
+                "cevap": [
+                    "Söyle kardeş"
                 ],
                 "kontrolcu": "BASA_DON"
             }

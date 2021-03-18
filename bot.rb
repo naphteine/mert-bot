@@ -3,6 +3,7 @@ require 'telegram/bot'
 require 'lingua/stemmer'
 require 'rufus-scheduler'
 require 'json'
+require 'benchmark'
 
 # Pure
 def logger(text)
@@ -21,10 +22,14 @@ $scheduler = Rufus::Scheduler.new
 
 $states = Hash.new
 
+$love = Hash.new
+
 $dialog = JSON.load_file "assets/dialog.json"
 $answers = JSON.load_file "assets/answers.json"
 
 $caricatures = Dir.glob('assets/img/caricatures/*')
+
+$morale = 50
 
 begin
 	$images = JSON.load_file('assets/image_hashes.json')
@@ -186,18 +191,56 @@ begin
 				when /^Adamsın lan Mert$/i then reply = "Eyvallah kardeşim"
 				when /^👊$/i then reply = "👊🏽"
 				when /(Canım sıkılıyor)$|(canım sıkıldı)$/i
+					reply = "Sıkma canını kardeeş"
 					image = $caricatures.sample
 				when /([asdfghjklşi]){6}\w+/i then reply = ["dkajflaskdjf", "kjdsalfjaldksfjalk", "sdkjlsdfjl", "dsaşfkjsaldf", "sakjdkasjd", "dsşafjasdkfs"].sample
+				when /^Mert senin moralini sikeyim$/i
+					if $morale > 0
+						$morale -= 50
+					end
+					reply = "Ben de senin moralini sikeyim aq"
+				when /^Mert senin moralini seveyim$/i
+					if $morale < 100
+						$morale += 50
+					end
+					reply = "Eyvallah kardeşim"
+				when /^Mert moralin nasıl$/i
+					case $morale
+					when 0 then reply = "Moralim çok bozuk be"
+					when 50 then reply = "İyi diyelim iyi olsun"
+					when 100 then reply = "Çok güzel bir gün, götüme çiçek sokasım var be"
+					end
+				when /^Mert senden nefret ediyorum$/i
+					if $love[message.from.id] > -50
+						$love[message.from.id] -= 50
+					end
+					reply = "Ben de senden amk"
+				when /^Mert seviyorum seni$/i
+					if $love[message.from.id] < 50
+						$love[message.from.id] += 50
+					end
+					reply = "Ben de seni seviyorum kardeşim"
+				when /^Mert beni seviyor musun$/i
+					case $love[message.from.id]
+					when -50 then reply = "Hayır :d"
+					when 50 then reply = "Tabii seviyorum oğlum kardeşimsin"
+					else
+						reply = "İyisin be kardeş"
+						$love[message.from.id] = 0
+					end
 
 				# Priority 3: Dialog system
 				else
-					reply = diyalog_kur(message.from.id, message.text)
+					time = Benchmark.measure do
+						reply = diyalog_kur(message.from.id, message.text)
+					end
+					logger("BENCHMARK: Diyalog: #{time}")
 				end
 
 				# Priority 4: Words
 				if reply.to_s.strip.empty?
 					case message.text
-					when /\bMert\b/i then reply = ["Adım geçti sanki lan", "Şşt arkamdan konuşmayın"].sample
+					when /\bMert\b/i then reply = ["Adım geçti sanki lan", "Şşt arkamdan konuşmayın", "Mert dedin devamını getir kardeş", "Söyle söyle çekinme", "Nediir", "Vıyy", "Ne diyorsen"].sample
 					when /\bAm\b/i then reply = "Lam kim dedi onu nerede"
 					end
 				end
@@ -227,7 +270,7 @@ logger("Buruki uyumaya gidiyor..")
 
 begin
 	File.open('assets/image_hashes.json', "w+") do |f|
-		f << $images.to_json
+		f << JSON.pretty_generate($images)
 	end
 	logger("DEBUG: #{$images.length} fotoğraf kimliği kaydedildi.")
 rescue Exception => e
