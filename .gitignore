@@ -2,3 +2,4 @@ Gemfile.lock
 secrets.rb
 logs/
 assets/img/
+assets/dialog/
