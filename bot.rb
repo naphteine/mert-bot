@@ -117,7 +117,7 @@ logger("Buruki uyanıyor!")
 begin
 	Telegram::Bot::Client.run($token) do |bot|
 		# Scheduler
-		$scheduler.every '8011s' do
+		$scheduler.every '81100s' do
 			reply = ["Yine çok neşelisiniz amk yazın hadi", "Amına koyem yazın gençlik", "Yine çok neşelisiniz. Yazsanıza aq", "Anlatın amk", "Saat #{DateTime.now.strftime("%H:%M")} olmuş, napıyorsunuz gençler"].sample
 			logger ">>> chat##{$master_chat_id}: #{reply}"
 			bot.api.send_message(chat_id:  $master_chat_id, text: reply)
@@ -211,11 +211,19 @@ begin
 					when 100 then reply = "Çok güzel bir gün, götüme çiçek sokasım var be"
 					end
 				when /^Mert senden nefret ediyorum$/i
+                  if not $love.has_key?(message.from.id)
+                    $love[message.from.id] = 0
+                  end
+
 					if $love[message.from.id] > -50
 						$love[message.from.id] -= 50
 					end
 					reply = "Ben de senden amk"
 				when /^Mert seviyorum seni$/i
+                  if not $love.has_key?(message.from.id)
+                    $love[message.from.id] = 0
+                  end
+
 					if $love[message.from.id] < 50
 						$love[message.from.id] += 50
 					end
