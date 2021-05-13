@@ -115,7 +115,9 @@ logger("Buruki uyanıyor!")
 
 # Telegram loop
 begin
+    retries = retries || 0
 	Telegram::Bot::Client.run($token) do |bot|
+
 		# Scheduler
 		$scheduler.every '81100s' do
 			reply = ["Yine çok neşelisiniz amk yazın hadi", "Amına koyem yazın gençlik", "Yine çok neşelisiniz. Yazsanıza aq", "Anlatın amk", "Saat #{DateTime.now.strftime("%H:%M")} olmuş, napıyorsunuz gençler"].sample
@@ -125,6 +127,8 @@ begin
 
 		# Replies
 		bot.listen do |message|
+            retries = 0
+
 			case message
 			when Telegram::Bot::Types::InlineQuery
 				results = [
@@ -172,6 +176,7 @@ begin
 				when /^Mert Kore'de saat kaç$/i then reply = "Kardeş Kore şuan " + DateTime.now.new_offset('+09:00').strftime("%H:%M")
 				when /^Mert isim salla$/i then reply = File.readlines("assets/isimler").sample.strip.capitalize + " nasıl"
 				when /(görüyon mu)$|(görüyor musun)$/i then reply = geri_sok(message.text) + " sana girsin"
+                when /tamam mı$/i then reply = ["Tamam", "Olmaz kjsdfj"].sample
 				when /^(İyi geceler Mert)$|^(İyi geceler)$|^(İyi geceler beyler)$/i then reply = "İyi geceler kardeşim"
 				when /^(Selam Mert)$|^(Selamlar)$|^(Selam beyler)$|^(Merhaba beyler)$|^(Merhaba Mert)$|^(Merhaba)$/i then reply = "Hoş geldin kardeş"
 				when /^(Bak)$|^(\(o\)\)\))$/i then reply = "(o)))"
@@ -270,8 +275,16 @@ begin
 			end
 		end
 	end
+rescue SystemExit
+    logger("EXCEPTION: SystemExit")
 rescue Exception => e
 	logger("EXCEPTION: #{e}")
+    retries += 1
+    sleep_time = retries * 10
+    if sleep_time > 60 then sleep_time 60 end
+    logger("EXCEPTION: RETRY: #{retries}; #{sleep_time} saniye bekleniyor...")
+    sleep sleep_time
+    retry
 end
 
 logger("Buruki uyumaya gidiyor..")
