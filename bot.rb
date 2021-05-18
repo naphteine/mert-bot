@@ -20,17 +20,13 @@ $waking_up = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 $trStemmer = Lingua::Stemmer.new(:language => "tr")
 $scheduler = Rufus::Scheduler.new(:lockfile => ".rufus-scheduler.lock")
 $autojob = Rufus::Scheduler::Job
-
 $states = Hash.new
-
 $love = Hash.new
-
 $dialog = JSON.load_file "assets/dialog.json"
 $answers = JSON.load_file "assets/answers.json"
-
 $caricatures = Dir.glob('assets/img/caricatures/*')
-
 $morale = 50
+$last = Hash.new
 
 begin
 	$images = JSON.load_file('assets/image_hashes.json')
@@ -119,6 +115,62 @@ def diyalog_kur(user_id, message)
 	return ""
 end
 
+def diyalog_bul(diyalog, anahtar)
+  return diyalog.find { |h1| h1['id'] == anahtar }
+end
+
+def diyalog_listele(diyalog, anahtar)
+  bul = diyalog_bul(diyalog, anahtar)["gelenler"]
+
+  if bul.empty?
+    return ""
+  end
+
+  cevap = String.new
+  bul.map { |h1| cevap << "Gelenler: " << h1["gelen"].to_s << " Cevaplar: " << h1["cevap"].to_s << " Beklenen: " << h1["kontrolcu"] << "\n" }
+  return cevap
+end
+
+def diyalog_tum_listele(diyalog)
+  if diyalog.empty?
+    return ""
+  end
+
+  cevap = String.new
+  diyalog.map { |h1| cevap << h1['id'].to_s << " " }
+  return cevap
+end
+
+def diyalog_istendi(msg)
+  if msg.to_s.strip.empty?
+    return "Boş atma amk"
+  end
+
+  begin
+    istenen = command_arguments(msg)
+
+    if istenen == "tamliste"
+      return diyalog_tum_listele($dialog)
+    end
+    return diyalog_listele($dialog, istenen)
+  rescue Exception => e
+    logger "DEBUG: diyalog_istendi: #{e.to_s}"
+    return "Olmadı niyeyse amk"
+  end
+end
+
+def diyalog_ekle(message)
+  if message.to_s.strip.empty?
+    return "Boş atma mk"
+  end
+
+  begin
+    return "Dur daha yok bundan"
+  rescue
+    return "Olmuyo amk nedense"
+  end
+end
+
 def command_arguments(command)
 	return command.split(/(.+?)\s(.+)/)[-1]
 end
@@ -179,6 +231,17 @@ def lanogren(message)
   end
 end
 
+def imghashes
+  begin
+      File.open('assets/image_hashes.json', "w+") do |f|
+          f << JSON.pretty_generate($images)
+      end
+      logger("DEBUG: #{$images.length} fotoğraf kimliği kaydedildi.")
+  rescue Exception => e
+      logger("EXCEPTION: Fotoğraf kimliği kaydederken hata: #{e}")
+  end
+end
+
 def tamogren
   begin
       File.open('assets/learned.json', "w+") do |f|
@@ -190,15 +253,31 @@ def tamogren
   end
 end
 
-def imghashes
+def kafayigom
   begin
-      File.open('assets/image_hashes.json', "w+") do |f|
-          f << JSON.pretty_generate($images)
+      File.open('assets/dialog.json', "w+") do |f|
+          f << JSON.pretty_generate($dialog)
       end
-      logger("DEBUG: #{$images.length} fotoğraf kimliği kaydedildi.")
+      logger("DEBUG: #{$dialog.length} diyalog kaydedildi.")
   rescue Exception => e
-      logger("EXCEPTION: Fotoğraf kimliği kaydederken hata: #{e}")
+      logger("EXCEPTION: Diyalogları kaydederken hata: #{e}")
   end
+end
+
+def son_getir(chat_id)
+  begin
+    if $last.has_key?(chat_id)
+      return $last[chat_id]
+    else
+      return "Bilmiyorum valla kardeş"
+    end
+  rescue
+    return "Durumum yoktu öğrenemedim kardeş"
+  end
+end
+
+def son_guncelle(chat_id, msg)
+  $last[chat_id] = msg;
 end
 
 # Main code
@@ -254,14 +333,24 @@ begin
 				logger "InlineQuery activity!"
 			when Telegram::Bot::Types::Message
 				logger "chat##{message.chat.id} #{message.from.id}@#{message.from.username}: #{message.text}"
+                unless message.text == "/son"
+                  son_guncelle(message.chat.id, message.text)
+                end
 				
 				case message.text
 				# Priority 1: Commands
 				when /^\/start$/i then reply = "Türkçe konuş"
-				when /^\/kafayı göm$/i
-					if message.from.id == $master_id
-						reply = "Gömemem be kardeş"
-					end
+                when /^\/kafayı göm/i
+                  begin
+                      File.open('assets/dialog.json', "w+") do |f|
+                          f << JSON.pretty_generate($dialog)
+                      end
+                      logger("DEBUG: #{$dialog.length} diyalog kaydedildi.")
+                      reply = "Tamamdır kardeş #{$dialog.length} tane diyalog kaydettim, zaten çıkarken kaydedecektim de unutmam artık"
+                  rescue Exception => e
+                      logger("EXCEPTION: Öğrenilen yanıtları kaydederken hata: #{e}")
+                      reply = "Kaydedemedim be kardeş, durumum yoktu.."
+                  end
 				when /^\/kafayı çek$/i
 					if message.from.id == $master_id
 						begin
@@ -288,7 +377,13 @@ begin
                       logger("EXCEPTION: Öğrenilen yanıtları kaydederken hata: #{e}")
                       reply = "Kaydedemedim be kardeş, durumum yoktu.."
                   end
+                when /^\/diyalog/i
+                  reply = diyalog_istendi(message.text)
+                when /^\/eklediyalog/i
+                  reply = diyalog_ekle(message.text)
                 when /^\/uyanik/i then reply = "#{awake()}. Uykum var aq (gerçekten yoruldum)"
+                when /^\/son$/i
+                  reply = son_getir(message.chat.id)
 
 
 				# Priority 2: Quick responses
@@ -426,5 +521,6 @@ logger("Buruki uyumaya gidiyor..")
 
 imghashes()
 tamogren()
+kafayigom()
 
 logger("İyi geceler. -Buruki")
