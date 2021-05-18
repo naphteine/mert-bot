@@ -18,7 +18,8 @@ load('secrets.rb')
 
 $waking_up = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 $trStemmer = Lingua::Stemmer.new(:language => "tr")
-$scheduler = Rufus::Scheduler.new
+$scheduler = Rufus::Scheduler.new(:lockfile => ".rufus-scheduler.lock")
+$autojob = Rufus::Scheduler::Job
 
 $states = Hash.new
 
@@ -38,6 +39,14 @@ rescue
 	$images = {
 	}
 	logger("DEBUG: Fotoğraf kimlikleri yüklenemedi! Yenisi yaratıldı.")
+end
+
+begin
+    $learned = JSON.load_file('assets/learned.json')
+	logger("DEBUG: #{$learned.length} öğrenilen yanıt dosyadan yüklendi.")
+rescue
+    $learned = Hash.new
+	logger("DEBUG: Öğrenilen yanıtlar yüklenemedi! Yenisi yaratıldı.")
 end
 
 # Functions
@@ -110,6 +119,88 @@ def diyalog_kur(user_id, message)
 	return ""
 end
 
+def command_arguments(command)
+	return command.split(/(.+?)\s(.+)/)[-1]
+end
+
+def awake
+	raw_seconds = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - $waking_up).round()
+	raw_minutes = raw_seconds / 60
+	hours = raw_minutes / 60
+	seconds = raw_seconds - raw_minutes * 60
+	minutes = raw_minutes - hours * 60
+
+	if raw_seconds > 3659
+		output = "#{hours} saat #{minutes} dakika"
+	elsif raw_seconds > 3599
+		output = "#{hours} saat"
+	elsif raw_seconds > 59
+		output = "#{minutes} dakika #{seconds} saniye"
+	else
+		output = "#{seconds} saniye oldu daha dur aq"
+	end
+
+	return output
+end
+
+def ogren(message)
+  begin
+    args = command_arguments(message)
+    splitted = args.split(",")
+
+    if splitted.length != 2
+      return "Böyle olmaz kardeş"
+    end
+
+    if ($learned.has_key?(splitted.first.downcase))
+      return "Bundan var kardeş, değiştireceksek /lanogren kullan"
+    end
+
+    $learned[splitted.first.downcase] = splitted.last
+    return ["Ekledim kardeş", "Tamamdır kardeş", "Bu da oldu kardeş", "Bunu da ekledim kardeş"].sample
+  rescue
+    return "Bu nasıl iş amk, olmuyor"
+  end
+end
+
+def lanogren(message)
+  begin
+    args = command_arguments(message)
+    splitted = args.split(",")
+
+    if splitted.length != 2
+      return "Böyle olmaz kardeş"
+    end
+
+    $learned[splitted.first.downcase] = splitted.last
+    return "Ekledim kardeş"
+  rescue
+    return "Bu nasıl iş amk, olmuyor"
+  end
+end
+
+def tamogren
+  begin
+      File.open('assets/learned.json', "w+") do |f|
+          f << JSON.pretty_generate($learned)
+      end
+      logger("DEBUG: #{$learned.length} öğrenilen yanıt kaydedildi.")
+  rescue Exception => e
+      logger("EXCEPTION: Öğrenilen yanıtları kaydederken hata: #{e}")
+  end
+end
+
+def imghashes
+  begin
+      File.open('assets/image_hashes.json', "w+") do |f|
+          f << JSON.pretty_generate($images)
+      end
+      logger("DEBUG: #{$images.length} fotoğraf kimliği kaydedildi.")
+  rescue Exception => e
+      logger("EXCEPTION: Fotoğraf kimliği kaydederken hata: #{e}")
+  end
+end
+
 # Main code
 logger("Buruki uyanıyor!")
 
@@ -119,11 +210,29 @@ begin
 	Telegram::Bot::Client.run($token) do |bot|
 
 		# Scheduler
-		$scheduler.every '81100s' do
-			reply = ["Yine çok neşelisiniz amk yazın hadi", "Amına koyem yazın gençlik", "Yine çok neşelisiniz. Yazsanıza aq", "Anlatın amk", "Saat #{DateTime.now.strftime("%H:%M")} olmuş, napıyorsunuz gençler"].sample
-			logger ">>> chat##{$master_chat_id}: #{reply}"
-			bot.api.send_message(chat_id:  $master_chat_id, text: reply)
-		end
+        unless $scheduler.down?
+          logger "Scheduler başlatılıyor.."
+
+          begin
+            if $scheduler.scheduled? $autojob
+              logger "Zaten Autojob var, onu kaldırıyorum"
+              $scheduler.unschedule $autojob
+            else
+              logger "Autojob'u kontrol ettim, açık değildi"
+            end
+          rescue
+            logger "Autojob var mı yok mu kontrol edemedim"
+          end
+
+          $autojob = $scheduler.every '8110s' do
+              tamogren()
+              imghashes()
+
+              reply = ["Yine çok neşelisiniz amk yazın hadi", "Amına koyem yazın gençlik", "Yine çok neşelisiniz. Yazsanıza aq", "Anlatın amk", "Saat #{DateTime.now.strftime("%H:%M")} olmuş, napıyorsunuz gençler"].sample
+              logger ">>> chat##{$master_chat_id}: #{reply}"
+              bot.api.send_message(chat_id:  $master_chat_id, text: reply)
+          end
+        end
 
 		# Replies
 		bot.listen do |message|
@@ -164,6 +273,23 @@ begin
 							reply = "Çekemedim"
 						end
 					end
+                when /^\/ogren/i
+                  reply = ogren(message.text)
+                when /^\/lanogren/i
+                  reply = lanogren(message.text)
+                when /^\/tamogren/i
+                  begin
+                      File.open('assets/learned.json', "w+") do |f|
+                          f << JSON.pretty_generate($learned)
+                      end
+                      logger("DEBUG: #{$learned.length} öğrenilen yanıt kaydedildi.")
+                      reply = "Tamamdır kardeş #{$learned.length} tane öğrendiğimi kaydettim, zaten çıkarken kaydedecektim de unutmam artık"
+                  rescue Exception => e
+                      logger("EXCEPTION: Öğrenilen yanıtları kaydederken hata: #{e}")
+                      reply = "Kaydedemedim be kardeş, durumum yoktu.."
+                  end
+                when /^\/uyanik/i then reply = "#{awake()}. Uykum var aq (gerçekten yoruldum)"
+
 
 				# Priority 2: Quick responses
 				when /^(Mert ibnesi)$|^(Amcık Mert)$|^(İbne Mert)$/i then reply = "Doğru konuş lan"
@@ -198,7 +324,7 @@ begin
 				when /(Canım sıkılıyor)$|(canım sıkıldı)$/i
 					reply = "Sıkma canını kardeeş"
 					image = $caricatures.sample
-				when /([asdfghjklşi]){6}\w+/i then reply = ["dkajflaskdjf", "kjdsalfjaldksfjalk", "sdkjlsdfjl", "dsaşfkjsaldf", "sakjdkasjd", "dsşafjasdkfs"].sample
+				when /([asdfghjklşi]){6}\w+/i then reply = ["ksdjfksdjfskd", "jhzdkjfhskjdfhks", "jsdhfjksdhfkjsdh", "ksdkjfsjdlkfjskl", "shdjkfhsdkf", "Jdhkjfhslkjh", "Hsdjfhsdkjf", "Kksdjfkds", "dkajflaskdjf", "kjdsalfjaldksfjalk", "sdkjlsdfjl", "dsaşfkjsaldf", "sakjdkasjd", "dsşafjasdkfs"].sample
 				when /^Mert senin moralini sikeyim$/i
 					if $morale > 0
 						$morale -= 50
@@ -254,9 +380,18 @@ begin
 				if reply.to_s.strip.empty?
 					case message.text
 					when /\bMert\b/i then reply = ["Adım geçti sanki lan", "Şşt arkamdan konuşmayın", "Mert dedin devamını getir kardeş", "Söyle söyle çekinme", "Nediir", "Vıyy", "Ne diyorsen"].sample
-					when /\bAm\b/i then reply = "Lam kim dedi onu nerede"
+					when /\bAm\bam\bam\b/i then reply = "Hani bize am"
 					end
 				end
+
+                # Priority 5: Learned replies
+                if reply.to_s.strip.empty?
+                  unless message.text.to_s.strip.empty?
+                    if ($learned.has_key?(message.text.downcase))
+                      reply = $learned[message.text.downcase]
+                    end
+                  end
+                end
 
 				# Send messages/photos, if it exists
 				unless image.to_s.strip.empty?
@@ -289,13 +424,7 @@ end
 
 logger("Buruki uyumaya gidiyor..")
 
-begin
-	File.open('assets/image_hashes.json', "w+") do |f|
-		f << JSON.pretty_generate($images)
-	end
-	logger("DEBUG: #{$images.length} fotoğraf kimliği kaydedildi.")
-rescue Exception => e
-	logger("EXCEPTION: Fotoğraf kimliği kaydederken hata: #{e}")
-end
+imghashes()
+tamogren()
 
 logger("İyi geceler. -Buruki")
