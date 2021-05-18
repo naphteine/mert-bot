@@ -280,6 +280,34 @@ def son_guncelle(chat_id, msg)
   $last[chat_id] = msg;
 end
 
+def cevir(chat_id, msg)
+  if command_arguments(msg) =~ /\/son$/
+    cevirilecek = son_getir(chat_id)
+  else
+    cevirilecek = command_arguments(msg)
+  end
+
+  if cevirilecek.empty?
+    return "Böyle bir şey yok ki kardeş"
+  end
+
+  return cevirilecek.split.reverse.join(" ")
+end
+
+def tam_cevir(chat_id, msg)
+  if command_arguments(msg) =~ /\/son$/
+    cevirilecek = son_getir(chat_id)
+  else
+    cevirilecek = command_arguments(msg)
+  end
+
+  if cevirilecek.empty?
+    return "Böyle bir şey yok ki kardeş"
+  end
+
+  return cevirilecek.to_s.reverse
+end
+
 # Main code
 logger("Buruki uyanıyor!")
 
@@ -333,7 +361,7 @@ begin
 				logger "InlineQuery activity!"
 			when Telegram::Bot::Types::Message
 				logger "chat##{message.chat.id} #{message.from.id}@#{message.from.username}: #{message.text}"
-                unless message.text == "/son"
+                unless message.text =~ /^\//
                   son_guncelle(message.chat.id, message.text)
                 end
 				
@@ -384,6 +412,10 @@ begin
                 when /^\/uyanik/i then reply = "#{awake()}. Uykum var aq (gerçekten yoruldum)"
                 when /^\/son$/i
                   reply = son_getir(message.chat.id)
+                when /^\/cevir/i
+                  reply = cevir(message.chat.id, message.text)
+                when /^\/tamcevir/i
+                  reply = tam_cevir(message.chat.id, message.text)
 
 
 				# Priority 2: Quick responses
