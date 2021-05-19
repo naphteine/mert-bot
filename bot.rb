@@ -175,6 +175,10 @@ def command_arguments(command)
 	return command.split(/(.+?)\s(.+)/)[-1]
 end
 
+def cmd_args(input)
+	return input.split(/\s(.+)/)
+end
+
 def awake
 	raw_seconds = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - $waking_up).round()
 	raw_minutes = raw_seconds / 60
@@ -195,13 +199,12 @@ def awake
 	return output
 end
 
-def ogren(message)
+def ogren(msg)
   begin
-    args = command_arguments(message)
-    splitted = args.split(",")
+    splitted = msg.split(",")
 
     if splitted.length != 2
-      return "Böyle olmaz kardeş"
+      return "Böyle olmaz kardeş şöyle yapacaksın: /ogren Merhaba, Al sana araba (o)))"
     end
 
     if ($learned.has_key?(splitted.first.downcase))
@@ -215,13 +218,12 @@ def ogren(message)
   end
 end
 
-def lanogren(message)
+def lanogren(msg)
   begin
-    args = command_arguments(message)
-    splitted = args.split(",")
+    splitted = msg.split(",")
 
     if splitted.length != 2
-      return "Böyle olmaz kardeş"
+      return "Böyle olmaz kardeş şöyle yapacaksın: /lanogren Merhaba, Al sana araba (o)))"
     end
 
     $learned[splitted.first.downcase] = splitted.last
@@ -281,10 +283,10 @@ def son_guncelle(chat_id, msg)
 end
 
 def cevir(chat_id, msg)
-  if command_arguments(msg) =~ /\/son$/
+  if msg =~ /\/son$/
     cevirilecek = son_getir(chat_id)
   else
-    cevirilecek = command_arguments(msg)
+    cevirilecek = msg
   end
 
   if cevirilecek.empty?
@@ -295,10 +297,10 @@ def cevir(chat_id, msg)
 end
 
 def tam_cevir(chat_id, msg)
-  if command_arguments(msg) =~ /\/son$/
+  if msg =~ /\/son$/
     cevirilecek = son_getir(chat_id)
   else
-    cevirilecek = command_arguments(msg)
+    cevirilecek = msg
   end
 
   if cevirilecek.empty?
@@ -306,6 +308,54 @@ def tam_cevir(chat_id, msg)
   end
 
   return cevirilecek.to_s.reverse
+end
+
+def handle_cmd(chat_id, input)
+  begin
+    # Check if it's really a command (i.e. starts with a slash)
+    unless input.chars[0] == "/"
+      logger "DEBUG handle_cmd: Input is not a command"
+      return ""
+    end
+
+    # Prepare variables
+    seperated = cmd_args(input)
+    args = seperated[-1]
+    cmd = seperated[0]
+    logger "DEBUG handle_cmd: Seperated: #{cmd} :: #{args}"
+
+    # Check if it's for us
+    splitted = cmd.split('@')
+    unless splitted[1].nil?
+      unless splitted[1] == "buruki_bot"
+        logger "DEBUG handle_cmd: Command is not for the bot"
+        return ""
+      end
+    end
+
+    # Handle the command
+    pure_cmd = splitted[0]
+    logger "DEBUG handle_cmd: Handling command: #{cmd} => #{pure_cmd}"
+
+    case pure_cmd
+    when "/cevir"
+      return cevir(chat_id, args)
+    when "/diyalog"
+      return diyalog_istendi(args)
+    when "/lanogren"
+      return lanogren(args)
+    when "/ogren"
+      return ogren(args)
+    when "/son"
+      return son_getir(chat_id)
+    when "/tamcevir"
+      return tam_cevir(chat_id, args)
+    when "/uyanik"
+      return "#{awake()} uykum geldi aq kaç saat olmuş böyle"
+    end
+  rescue Exception => e
+    logger "EXCEPTION handle_cmd: #{e}"
+  end
 end
 
 # Main code
@@ -390,10 +440,6 @@ begin
 							reply = "Çekemedim"
 						end
 					end
-                when /^\/ogren/i
-                  reply = ogren(message.text)
-                when /^\/lanogren/i
-                  reply = lanogren(message.text)
                 when /^\/tamogren/i
                   begin
                       File.open('assets/learned.json', "w+") do |f|
@@ -405,49 +451,16 @@ begin
                       logger("EXCEPTION: Öğrenilen yanıtları kaydederken hata: #{e}")
                       reply = "Kaydedemedim be kardeş, durumum yoktu.."
                   end
-                when /^\/diyalog/i
-                  reply = diyalog_istendi(message.text)
                 when /^\/eklediyalog/i
                   reply = diyalog_ekle(message.text)
-                when /^\/uyanik/i then reply = "#{awake()}. Uykum var aq (gerçekten yoruldum)"
-                when /^\/son$/i
-                  reply = son_getir(message.chat.id)
-                when /^\/cevir/i
-                  reply = cevir(message.chat.id, message.text)
-                when /^\/tamcevir/i
-                  reply = tam_cevir(message.chat.id, message.text)
 
 
-				# Priority 2: Quick responses
-				when /^(Mert ibnesi)$|^(Amcık Mert)$|^(İbne Mert)$/i then reply = "Doğru konuş lan"
-				when /^(Melih ibnesi)$|^(Amcık Melih)$|^(İbne Melih)$/i then reply = "Şşş ibne olabilir ama o da içimizden"
-				when /^Use Signal$/i then reply = "I can't aq"
-				when /^Gönüller bir$/i then reply = "Tabbbe ✊✊"
-				when /^Ihı ohı ohı Mert$/i then reply = "Hıı şurdaki kızları ellesek"
-				when /^31 çek$/i then reply = "Sevisiyorum ben düzenli"
+				# Priority 2: Active replies
 				when /^Sana girsin$/i then reply = "Sana da " + File.readlines("assets/sokulabilir").sample.strip.downcase + " girsin"
 				when /^Mert Kore'de saat kaç$/i then reply = "Kardeş Kore şuan " + DateTime.now.new_offset('+09:00').strftime("%H:%M")
 				when /^Mert isim salla$/i then reply = File.readlines("assets/isimler").sample.strip.capitalize + " nasıl"
 				when /(görüyon mu)$|(görüyor musun)$/i then reply = geri_sok(message.text) + " sana girsin"
-                when /tamam mı$/i then reply = ["Tamam", "Olmaz kjsdfj"].sample
-				when /^(İyi geceler Mert)$|^(İyi geceler)$|^(İyi geceler beyler)$/i then reply = "İyi geceler kardeşim"
-				when /^(Selam Mert)$|^(Selamlar)$|^(Selam beyler)$|^(Merhaba beyler)$|^(Merhaba Mert)$|^(Merhaba)$/i then reply = "Hoş geldin kardeş"
-				when /^(Bak)$|^(\(o\)\)\))$/i then reply = "(o)))"
-				when /^(Görüşürüz Mert)$|^(Mert görüşürüz)$|^(Görüşürüz beyler)$/i then reply = "Görüşürüz kardeşim"
-				when /\b(Maya'yı sik)$|\b(Mayayı sik)$/i then reply = "Ne diyon lan aq Maya benim bacım sayılır. Seni sikerim doğru konuş"
-				when /^Mert, Melih'i sik$/i then reply = "Meliiih gel attaya gidecez"
-				when /^Sinirim çok bozuk$/i then reply = "Sinirlerini topla kardeş"
-				when /^Yarın buluşalım mı$/i then reply = "Buluşalım ben de geliyorum"
-				when /^Yarın erken kalkacağım$/i then reply = "Git yat uyu o zaman"
-				when /^Yazılım$/i then reply = "Yazılmayalım"
-				when /^Seni seviyorum kral$/i then reply = "Eyvallah tosun ben de seni seviyim"
-				when /^En iyi dostumsun$/i then reply = "Sen benim kardeşimsin kardeşim. Ölümüne"
-				when /^Hastayım$/i then reply = "Geçmiş olsun kardeşim"
-				when /^Mert'e vurdururuz$/i then reply = "Kim bana vurduruyor şimdi ona göre şeyetcem"
-				when /^Mert neyin var$/i then reply = "Bir şeyim yok Allaha şükür jsadhfas"
-				when /^Görmek isterim$/i then reply = "Ezan bitsin hemen gösterecem"
-				when /^Adamsın lan Mert$/i then reply = "Eyvallah kardeşim"
-				when /^👊$/i then reply = "👊🏽"
+                when /tamam mı$/i then reply = ["Tamam olur", "Olmaz aq", "Olabilir", "Bana ne soruyon aq", "Olurmaz", "Olmazur"].sample
 				when /(Canım sıkılıyor)$|(canım sıkıldı)$/i
 					reply = "Sıkma canını kardeeş"
 					image = $caricatures.sample
@@ -503,15 +516,20 @@ begin
 					logger("BENCHMARK: Diyalog: #{time}")
 				end
 
-				# Priority 4: Words
+                # Priority 4: Command handling system
+                if reply.to_s.strip.empty?
+                  reply = handle_cmd(message.chat.id, message.text)
+                end
+
+				# Priority 5: Words
 				if reply.to_s.strip.empty?
 					case message.text
 					when /\bMert\b/i then reply = ["Adım geçti sanki lan", "Şşt arkamdan konuşmayın", "Mert dedin devamını getir kardeş", "Söyle söyle çekinme", "Nediir", "Vıyy", "Ne diyorsen"].sample
-					when /\bAm\bam\bam\b/i then reply = "Hani bize am"
+					when /\bam am\b/i then reply = "Hani bize am"
 					end
 				end
 
-                # Priority 5: Learned replies
+                # Priority 6: Learned replies
                 if reply.to_s.strip.empty?
                   unless message.text.to_s.strip.empty?
                     if ($learned.has_key?(message.text.downcase))
@@ -539,7 +557,7 @@ begin
 	end
 rescue SystemExit
     logger("EXCEPTION: SystemExit")
-rescue Exception => e
+rescue Faraday::ConnectionFailed => e
 	logger("EXCEPTION: #{e}")
     retries += 1
     sleep_time = retries * 10
@@ -547,6 +565,8 @@ rescue Exception => e
     logger("EXCEPTION: RETRY: #{retries}; #{sleep_time} saniye bekleniyor...")
     sleep sleep_time
     retry
+rescue Exception => e
+    logger "EXCEPTION: #{e}"
 end
 
 logger("Buruki uyumaya gidiyor..")
