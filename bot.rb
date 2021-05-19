@@ -45,6 +45,14 @@ rescue
 	logger("DEBUG: Öğrenilen yanıtlar yüklenemedi! Yenisi yaratıldı.")
 end
 
+begin
+    $insertable = JSON.load_file('assets/insertable.json')
+	logger("DEBUG: #{$insertable.length} tane sokulabilir nesne dosyadan yüklendi.")
+rescue
+    $insertable = ["kamyon", "kamyonet", "boru", "başı", "apartman", "kule"]
+	logger("DEBUG: Sokulabilir nesneler yüklenemedi! Yenisi yaratıldı.")
+end
+
 # Functions
 def geri_sok(mesaj)
 	sonsuz_mesaj = mesaj[/(.*)\s/,1][/(.*)\s/,1]
@@ -218,6 +226,23 @@ def ogren(msg)
   end
 end
 
+def sokekle(msg)
+  begin
+    if msg.length < 2
+      return "Bu çok kısa, olmaz kardeş şöyle yapacaksın: /sokekle boru"
+    end
+
+    if ($insertable.include?(msg.to_s.downcase))
+      return "Bundan var kardeş"
+    end
+
+    $insertable.append(msg.to_s.downcase)
+    return ["Ekledim kardeş", "Tamamdır kardeş", "Bu da oldu kardeş", "Bunu da ekledim kardeş"].sample
+  rescue
+    return "Bu nasıl iş amk, olmuyor"
+  end
+end
+
 def lanogren(msg)
   begin
     splitted = msg.split(",")
@@ -252,6 +277,17 @@ def tamogren
       logger("DEBUG: #{$learned.length} öğrenilen yanıt kaydedildi.")
   rescue Exception => e
       logger("EXCEPTION: Öğrenilen yanıtları kaydederken hata: #{e}")
+  end
+end
+
+def tamsokekle
+  begin
+      File.open('assets/insertable.json', "w+") do |f|
+          f << JSON.pretty_generate($insertable)
+      end
+      logger("DEBUG: #{$insertable.length} adet sokulabilir nesne kaydedildi.")
+  rescue Exception => e
+      logger("EXCEPTION: Sokulabilir nesneleri kaydederken hata: #{e}")
   end
 end
 
@@ -346,6 +382,8 @@ def handle_cmd(chat_id, input)
       return lanogren(args)
     when "/ogren"
       return ogren(args)
+    when "/sokekle"
+      return sokekle(args)
     when "/son"
       return son_getir(chat_id)
     when "/tamcevir"
@@ -440,6 +478,17 @@ begin
 							reply = "Çekemedim"
 						end
 					end
+                when /^\/tamsokekle/i
+                  begin
+                      File.open('assets/insertable.json', "w+") do |f|
+                          f << JSON.pretty_generate($insertable)
+                      end
+                      logger("DEBUG: #{$insertable.length} adet sokulabilir nesne kaydedildi.")
+                      reply = "Tamamdır kardeş #{$insertable.length} tane sokulabilir nesneyi kaydettim, zaten çıkarken kaydedecektim de unutmam artık"
+                  rescue Exception => e
+                      logger("EXCEPTION: Sokulabilir nesneleri kaydederken hata: #{e}")
+                      reply = "Kaydedemedim be kardeş, durumum yoktu.."
+                  end
                 when /^\/tamogren/i
                   begin
                       File.open('assets/learned.json', "w+") do |f|
@@ -456,7 +505,7 @@ begin
 
 
 				# Priority 2: Active replies
-				when /^Sana girsin$/i then reply = "Sana da " + File.readlines("assets/sokulabilir").sample.strip.downcase + " girsin"
+				when /^Sana girsin$/i then reply = "Sana da " + $insertable.sample.strip.downcase + " girsin"
 				when /^Mert Kore'de saat kaç$/i then reply = "Kardeş Kore şuan " + DateTime.now.new_offset('+09:00').strftime("%H:%M")
 				when /^Mert isim salla$/i then reply = File.readlines("assets/isimler").sample.strip.capitalize + " nasıl"
 				when /(görüyon mu)$|(görüyor musun)$/i then reply = geri_sok(message.text) + " sana girsin"
@@ -574,5 +623,6 @@ logger("Buruki uyumaya gidiyor..")
 imghashes()
 tamogren()
 kafayigom()
+tamsokekle()
 
 logger("İyi geceler. -Buruki")
