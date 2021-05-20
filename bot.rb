@@ -7,10 +7,10 @@ require 'benchmark'
 
 # Pure
 def logger(text)
-    puts "#{DateTime.now} #{text}"
-	open('logs/buruki.log', 'a') { |f|
-		f.puts "#{DateTime.now} #{text}"
-	}
+  puts "#{DateTime.now} #{text}"
+  open('logs/buruki.log', 'a') { |f|
+    f.puts "#{DateTime.now} #{text}"
+  }
 end
 
 # Globals
@@ -29,97 +29,97 @@ $morale = 50
 $last = Hash.new
 
 begin
-	$images = JSON.load_file('assets/image_hashes.json')
-	logger("DEBUG: #{$images.length} fotoğraf kimliği dosyadan yüklendi.")
+  $images = JSON.load_file('assets/image_hashes.json')
+  logger("DEBUG: #{$images.length} fotoğraf kimliği dosyadan yüklendi.")
 rescue
-    $images = Hash.new
-	logger("DEBUG: Fotoğraf kimlikleri yüklenemedi! Yenisi yaratıldı.")
+  $images = Hash.new
+  logger("DEBUG: Fotoğraf kimlikleri yüklenemedi! Yenisi yaratıldı.")
 end
 
 begin
-    $learned = JSON.load_file('assets/learned.json')
-	logger("DEBUG: #{$learned.length} öğrenilen yanıt dosyadan yüklendi.")
+  $learned = JSON.load_file('assets/learned.json')
+  logger("DEBUG: #{$learned.length} öğrenilen yanıt dosyadan yüklendi.")
 rescue
-    $learned = Hash.new
-	logger("DEBUG: Öğrenilen yanıtlar yüklenemedi! Yenisi yaratıldı.")
+  $learned = Hash.new
+  logger("DEBUG: Öğrenilen yanıtlar yüklenemedi! Yenisi yaratıldı.")
 end
 
 begin
-    $insertable = JSON.load_file('assets/insertable.json')
-	logger("DEBUG: #{$insertable.length} tane sokulabilir nesne dosyadan yüklendi.")
+  $insertable = JSON.load_file('assets/insertable.json')
+  logger("DEBUG: #{$insertable.length} tane sokulabilir nesne dosyadan yüklendi.")
 rescue
-    $insertable = ["kamyon", "kamyonet", "boru", "başı", "apartman", "kule"]
-	logger("DEBUG: Sokulabilir nesneler yüklenemedi! Yenisi yaratıldı.")
+  $insertable = ["kamyon", "kamyonet", "boru", "başı", "apartman", "kule"]
+  logger("DEBUG: Sokulabilir nesneler yüklenemedi! Yenisi yaratıldı.")
 end
 
 # Functions
 def geri_sok(mesaj)
-	sonsuz_mesaj = mesaj[/(.*)\s/,1][/(.*)\s/,1]
-	eksiz_kelime = $trStemmer.stem(sonsuz_mesaj.split.last)
-	return sonsuz_mesaj.chomp(sonsuz_mesaj.split.last) + eksiz_kelime
+  sonsuz_mesaj = mesaj[/(.*)\s/,1][/(.*)\s/,1]
+  eksiz_kelime = $trStemmer.stem(sonsuz_mesaj.split.last)
+  return sonsuz_mesaj.chomp(sonsuz_mesaj.split.last) + eksiz_kelime
 end
 
 def diyalog_kur(user_id, message)
-	answer = ""
+  answer = ""
 
-	# Check hash and get user state
-	if $states.has_key?(user_id) == false
-		$states[user_id] = "BASA_DON"
-	end
+  # Check hash and get user state
+  if $states.has_key?(user_id) == false
+    $states[user_id] = "BASA_DON"
+  end
 
-	if message.to_s.strip.empty?
-		return ""
-	end
+  if message.to_s.strip.empty?
+    return ""
+  end
 
-	state = $states[user_id]
-	
-	# Check dialogs and find ID == state
-	begin
-		gelenler = $dialog.find { |h1| h1['id'] == state }['gelenler']
-	rescue Exception => e
-		logger("EXCEPTION: Diyalog ID #{state} yok! #{e}")
-		return ""
-	end
+  state = $states[user_id]
 
-	unless gelenler.to_s.strip.empty?
-		# Check every possible messages for a match
-		begin
-			find_matches = gelenler.find { |h1| h1['gelen'].find { |h2| h2.downcase==message.downcase } }
-		rescue Exception => e
-			logger("EXCEPTION: Mesaj #{message} yok! #{e}")
-			return ""
-		end
-		
+  # Check dialogs and find ID == state
+  begin
+    gelenler = $dialog.find { |h1| h1['id'] == state }['gelenler']
+  rescue Exception => e
+    logger("EXCEPTION: Diyalog ID #{state} yok! #{e}")
+    return ""
+  end
 
-		unless find_matches.to_s.strip.empty?
-			# Update state
-			$states[user_id] = find_matches['kontrolcu']
+  unless gelenler.to_s.strip.empty?
+    # Check every possible messages for a match
+    begin
+      find_matches = gelenler.find { |h1| h1['gelen'].find { |h2| h2.downcase==message.downcase } }
+    rescue Exception => e
+      logger("EXCEPTION: Mesaj #{message} yok! #{e}")
+      return ""
+    end
 
-			# Get a random response
-			answer = find_matches['cevap'].sample.strip
 
-			# Post-process response, if starts with "___"
-			if answer[0, 3] == "___"
-				begin
-					answers_to_process = $answers.find {|h1| h1['id']==answer}['cevaplar'].sample
-				rescue Exception => e
-					logger("EXCEPTION: Cevap #{answer} yok! #{e}")
-					return ""
-				end
-				
-				$states[user_id] = answers_to_process['kontrolcu']
-				processed_answer = answers_to_process['cevap'].sample.strip
+    unless find_matches.to_s.strip.empty?
+      # Update state
+      $states[user_id] = find_matches['kontrolcu']
 
-				unless processed_answer.to_s.strip.empty?
-					answer = processed_answer
-				end
-			end
-			
-			return answer
-		end
-	end
+      # Get a random response
+      answer = find_matches['cevap'].sample.strip
 
-	return ""
+      # Post-process response, if starts with "___"
+      if answer[0, 3] == "___"
+        begin
+          answers_to_process = $answers.find {|h1| h1['id']==answer}['cevaplar'].sample
+        rescue Exception => e
+          logger("EXCEPTION: Cevap #{answer} yok! #{e}")
+          return ""
+        end
+
+        $states[user_id] = answers_to_process['kontrolcu']
+        processed_answer = answers_to_process['cevap'].sample.strip
+
+        unless processed_answer.to_s.strip.empty?
+          answer = processed_answer
+        end
+      end
+
+      return answer
+    end
+  end
+
+  return ""
 end
 
 def diyalog_bul(diyalog, anahtar)
@@ -179,39 +179,39 @@ def diyalog_ekle(message)
 end
 
 def command_arguments(command)
-	return command.split(/(.+?)\s(.+)/)[-1]
+  return command.split(/(.+?)\s(.+)/)[-1]
 end
 
 def cmd_args(input)
-	return input.split(/\s(.+)/)
+  return input.split(/\s(.+)/)
 end
 
 def awake
-	raw_seconds = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - $waking_up).round()
-	raw_minutes = raw_seconds / 60
-	hours = raw_minutes / 60
-	seconds = raw_seconds - raw_minutes * 60
-	minutes = raw_minutes - hours * 60
+  raw_seconds = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - $waking_up).round()
+  raw_minutes = raw_seconds / 60
+  hours = raw_minutes / 60
+  seconds = raw_seconds - raw_minutes * 60
+  minutes = raw_minutes - hours * 60
 
-	if raw_seconds > 3659
-		output = "#{hours} saat #{minutes} dakika"
-	elsif raw_seconds > 3599
-		output = "#{hours} saat"
-	elsif raw_seconds > 59
-		output = "#{minutes} dakika #{seconds} saniye"
-	else
-		output = "#{seconds} saniye oldu daha dur aq"
-	end
+  if raw_seconds > 3659
+    output = "#{hours} saat #{minutes} dakika"
+  elsif raw_seconds > 3599
+    output = "#{hours} saat"
+  elsif raw_seconds > 59
+    output = "#{minutes} dakika #{seconds} saniye"
+  else
+    output = "#{seconds} saniye oldu daha dur aq"
+  end
 
-	return output
+  return output
 end
 
-def ogren(msg)
+def ogren(msg, splitter: ",")
   begin
-    splitted = msg.split(",")
+    splitted = msg.split(splitter)
 
     if splitted.length != 2
-      return "Böyle olmaz kardeş şöyle yapacaksın: /ogren Merhaba, Al sana araba (o)))"
+      return "Böyle olmaz kardeş şöyle yapacaksın: /ogren Merhaba#{splitter} Al sana araba (o)))"
     end
 
     if ($learned.has_key?(splitted.first.downcase))
@@ -227,7 +227,7 @@ end
 
 def sokekle(msg)
   begin
-    if msg.length < 2
+    if msg.length < 1
       return "Bu çok kısa, olmaz kardeş şöyle yapacaksın: /sokekle boru"
     end
 
@@ -242,12 +242,12 @@ def sokekle(msg)
   end
 end
 
-def lanogren(msg)
+def lanogren(msg, splitter: ",")
   begin
-    splitted = msg.split(",")
+    splitted = msg.split(splitter)
 
     if splitted.length != 2
-      return "Böyle olmaz kardeş şöyle yapacaksın: /lanogren Merhaba, Al sana araba (o)))"
+      return "Böyle olmaz kardeş şöyle yapacaksın: /lanogren Merhaba#{splitter} Al sana araba (o)))"
     end
 
     $learned[splitted.first.downcase] = splitted.last
@@ -257,14 +257,16 @@ def lanogren(msg)
   end
 end
 
-def json_to_file(var, file, description, :replymode = false)
+def json_to_file(var, file, description)
   begin
-      File.open(file, "w+") do |f|
-          f << JSON.pretty_generate(var)
-      end
-      logger("DEBUG: #{var.length} adet #{description.to_s.downcase} kaydedildi.")
+    File.open(file, "w+") do |f|
+      f << JSON.pretty_generate(var)
+    end
+    logger("DEBUG: #{var.length} adet #{description.to_s.downcase} kaydedildi.")
+    return "Tamamdır kardeş #{var.length} tane #{description.to_s.downcase} kaydettim, zaten çıkarken kaydedecektim de unutmam artık"
   rescue Exception => e
-      logger("EXCEPTION: #{description.to_s.capitalize} kaydı sırasında hata: #{e}")
+    logger("EXCEPTION: #{description.to_s.capitalize} kaydı sırasında hata: #{e}")
+    return "Durumum yoktu kaydedemedim be kardeş"
   end
 end
 
@@ -282,6 +284,17 @@ end
 
 def kafayigom
   json_to_file($dialog, "assets/dialog.json", "diyalog")
+end
+
+def kafayicek
+  begin
+    $dialog = JSON.load_file "assets/dialog.json"
+    $responses = JSON.load_file "assets/answers.json"
+    $caricatures = Dir.glob('assets/caricatures/*')
+    return "Çektim çektim"
+  rescue Exception => e
+    return "Çekemedim"
+  end
 end
 
 def son_getir(chat_id)
@@ -360,16 +373,32 @@ def handle_cmd(chat_id, input)
       return cevir(chat_id, args)
     when "/diyalog"
       return diyalog_istendi(args)
+    when "/eklediyalog"
+      return diyalog_ekle(args)
+    when "/kafacek"
+      return kafacek
+    when "/kafagom"
+      return json_to_file($dialog, "assets/dialog.json", "diyalog")
     when "/lanogren"
       return lanogren(args)
+    when "/lanogren~>"
+      return lanogren(args, splitter: "~>")
     when "/ogren"
       return ogren(args)
+    when "/ogren~>"
+      return ogren(args, splitter: "~>")
+    when "/start"
+      return "Türkçe konuş"
     when "/sokekle"
       return sokekle(args)
     when "/son"
       return son_getir(chat_id)
     when "/tamcevir"
       return tam_cevir(chat_id, args)
+    when "/tamogren"
+      return json_to_file($learned, "assets/learned.json", "öğrendiğim yanıtı")
+    when "/tamsokekle"
+      return json_to_file($insertable, "assets/insertable.json", "sokulabilir nesneyi")
     when "/uyanik"
       return "#{awake()} uykum geldi aq kaç saat olmuş böyle"
     end
@@ -383,221 +412,170 @@ logger("Buruki uyanıyor!")
 
 # Telegram loop
 begin
-    retries = retries || 0
-	Telegram::Bot::Client.run($token) do |bot|
+  retries = retries || 0
+  Telegram::Bot::Client.run($token) do |bot|
 
-		# Scheduler
-        unless $scheduler.down?
-          logger "Scheduler başlatılıyor.."
+    # Scheduler
+    unless $scheduler.down?
+      logger "Scheduler başlatılıyor.."
 
-          begin
-            if $scheduler.scheduled? $autojob
-              logger "Zaten Autojob var, onu kaldırıyorum"
-              $scheduler.unschedule $autojob
-            else
-              logger "Autojob'u kontrol ettim, açık değildi"
-            end
-          rescue
-            logger "Autojob var mı yok mu kontrol edemedim"
+      begin
+        if $scheduler.scheduled? $autojob
+          logger "Zaten Autojob var, onu kaldırıyorum"
+          $scheduler.unschedule $autojob
+        else
+          logger "Autojob'u kontrol ettim, açık değildi"
+        end
+      rescue
+        logger "Autojob var mı yok mu kontrol edemedim"
+      end
+
+      $autojob = $scheduler.every '8110s' do
+        tamogren()
+        imghashes()
+
+        reply = ["Yine çok neşelisiniz amk yazın hadi", "Amına koyem yazın gençlik", "Yine çok neşelisiniz. Yazsanıza aq", "Anlatın amk", "Saat #{DateTime.now.strftime("%H:%M")} olmuş, napıyorsunuz gençler"].sample
+        logger ">>> chat##{$master_chat_id}: #{reply}"
+        bot.api.send_message(chat_id:  $master_chat_id, text: reply)
+      end
+    end
+
+    # Replies
+    bot.listen do |message|
+      retries = 0
+
+      case message
+      when Telegram::Bot::Types::InlineQuery
+        results = [
+          [1, 'Buruki', "Tek güç Buruki POWER!"],
+          [2, 'Mert', "Ne var lan"]
+        ].map do |arr|
+          Telegram::Bot::Types::InlineQueryResultArticle.new(
+            id: arr[0],
+            title: arr[1],
+            input_message_content: Telegram::Bot::Types::InputTextMessageContent.new(message_text: arr[2])
+          )
+        end
+        bot.api.answer_inline_query(inline_query_id: message.id, results: results, cache_time: 5)
+        logger "InlineQuery activity!"
+      when Telegram::Bot::Types::Message
+        logger "chat##{message.chat.id} #{message.from.id}@#{message.from.username}: #{message.text}"
+        unless message.text =~ /^\//
+          son_guncelle(message.chat.id, message.text)
+        end
+
+        case message.text
+          # Priority 1: Commands
+        when /^\//i
+          reply = handle_cmd(message.chat.id, message.text)
+
+          # Priority 2: Active replies
+        when /^Sana girsin$/i then reply = "Sana da " + $insertable.sample.strip.downcase + " girsin"
+        when /^Mert Kore'de saat kaç$/i then reply = "Kardeş Kore şuan " + DateTime.now.new_offset('+09:00').strftime("%H:%M")
+        when /^Mert isim salla$/i then reply = File.readlines("assets/isimler").sample.strip.capitalize + " nasıl"
+        when /(görüyon mu)$|(görüyor musun)$/i then reply = geri_sok(message.text) + " sana girsin"
+        when /tamam mı$/i then reply = ["Tamam olur", "Olmaz aq", "Olabilir", "Bana ne soruyon aq", "Olurmaz", "Olmazur"].sample
+        when /(Canım sıkılıyor)$|(canım sıkıldı)$/i
+          reply = "Sıkma canını kardeeş"
+          image = $caricatures.sample
+        when /([asdfghjklşi]){6}\w+/i then reply = ["ksdjfksdjfskd", "jhzdkjfhskjdfhks", "jsdhfjksdhfkjsdh", "ksdkjfsjdlkfjskl", "shdjkfhsdkf", "Jdhkjfhslkjh", "Hsdjfhsdkjf", "Kksdjfkds", "dkajflaskdjf", "kjdsalfjaldksfjalk", "sdkjlsdfjl", "dsaşfkjsaldf", "sakjdkasjd", "dsşafjasdkfs"].sample
+        when /^Mert senin moralini sikeyim$/i
+          if $morale > 0
+            $morale -= 50
+          end
+          reply = "Ben de senin moralini sikeyim aq"
+        when /^Mert senin moralini seveyim$/i
+          if $morale < 100
+            $morale += 50
+          end
+          reply = "Eyvallah kardeşim"
+        when /^Mert moralin nasıl$/i
+          case $morale
+          when 0 then reply = "Moralim çok bozuk be"
+          when 50 then reply = "İyi diyelim iyi olsun"
+          when 100 then reply = "Çok güzel bir gün, götüme çiçek sokasım var be"
+          end
+        when /^Mert senden nefret ediyorum$/i
+          if not $love.has_key?(message.from.id)
+            $love[message.from.id] = 0
           end
 
-          $autojob = $scheduler.every '8110s' do
-              tamogren()
-              imghashes()
+          if $love[message.from.id] > -50
+            $love[message.from.id] -= 50
+          end
+          reply = "Ben de senden amk"
+        when /^Mert seviyorum seni$/i
+          if not $love.has_key?(message.from.id)
+            $love[message.from.id] = 0
+          end
 
-              reply = ["Yine çok neşelisiniz amk yazın hadi", "Amına koyem yazın gençlik", "Yine çok neşelisiniz. Yazsanıza aq", "Anlatın amk", "Saat #{DateTime.now.strftime("%H:%M")} olmuş, napıyorsunuz gençler"].sample
-              logger ">>> chat##{$master_chat_id}: #{reply}"
-              bot.api.send_message(chat_id:  $master_chat_id, text: reply)
+          if $love[message.from.id] < 50
+            $love[message.from.id] += 50
+          end
+          reply = "Ben de seni seviyorum kardeşim"
+        when /^Mert beni seviyor musun$/i
+          case $love[message.from.id]
+          when -50 then reply = "Hayır :d"
+          when 50 then reply = "Tabii seviyorum oğlum kardeşimsin"
+          else
+            reply = "İyisin be kardeş"
+            $love[message.from.id] = 0
+          end
+
+          # Priority 3: Dialog system
+        else
+          time = Benchmark.measure do
+            reply = diyalog_kur(message.from.id, message.text)
+          end
+          logger("BENCHMARK: Diyalog: #{time}")
+        end
+
+        # Priority 4: Words
+        if reply.to_s.strip.empty?
+          case message.text
+          when /\bMert\b/i then reply = ["Adım geçti sanki lan", "Şşt arkamdan konuşmayın", "Mert dedin devamını getir kardeş", "Söyle söyle çekinme", "Nediir", "Vıyy", "Ne diyorsen"].sample
+          when /\bam am\b/i then reply = "Hani bize am"
           end
         end
 
-		# Replies
-		bot.listen do |message|
-            retries = 0
+        # Priority 5: Learned replies
+        if reply.to_s.strip.empty?
+          unless message.text.to_s.strip.empty?
+            if ($learned.has_key?(message.text.downcase))
+              reply = $learned[message.text.downcase]
+            end
+          end
+        end
 
-			case message
-			when Telegram::Bot::Types::InlineQuery
-				results = [
-					[1, 'Buruki', "Tek güç Buruki POWER!"],
-					[2, 'Mert', "Ne var lan"]
-				].map do |arr|
-					Telegram::Bot::Types::InlineQueryResultArticle.new(
-						id: arr[0],
-						title: arr[1],
-						input_message_content: Telegram::Bot::Types::InputTextMessageContent.new(message_text: arr[2])
-					)
-				end
-				bot.api.answer_inline_query(inline_query_id: message.id, results: results, cache_time: 5)
-				logger "InlineQuery activity!"
-			when Telegram::Bot::Types::Message
-				logger "chat##{message.chat.id} #{message.from.id}@#{message.from.username}: #{message.text}"
-                unless message.text =~ /^\//
-                  son_guncelle(message.chat.id, message.text)
-                end
-				
-				case message.text
-				# Priority 1: Commands
-				when /^\/start$/i then reply = "Türkçe konuş"
-                when /^\/kafayı göm/i
-                  begin
-                      File.open('assets/dialog.json', "w+") do |f|
-                          f << JSON.pretty_generate($dialog)
-                      end
-                      logger("DEBUG: #{$dialog.length} diyalog kaydedildi.")
-                      reply = "Tamamdır kardeş #{$dialog.length} tane diyalog kaydettim, zaten çıkarken kaydedecektim de unutmam artık"
-                  rescue Exception => e
-                      logger("EXCEPTION: Öğrenilen yanıtları kaydederken hata: #{e}")
-                      reply = "Kaydedemedim be kardeş, durumum yoktu.."
-                  end
-				when /^\/kafayı çek$/i
-					if message.from.id == $master_id
-						begin
-							$dialog = JSON.load_file "assets/dialog.json"
-							$responses = JSON.load_file "assets/answers.json"
-							$caricatures = Dir.glob('assets/caricatures/*')
-							reply = "Çektim çektim"
-						rescue Exception => e
-							reply = "Çekemedim"
-						end
-					end
-                when /^\/tamsokekle/i
-                  begin
-                      File.open('assets/insertable.json', "w+") do |f|
-                          f << JSON.pretty_generate($insertable)
-                      end
-                      logger("DEBUG: #{$insertable.length} adet sokulabilir nesne kaydedildi.")
-                      reply = "Tamamdır kardeş #{$insertable.length} tane sokulabilir nesneyi kaydettim, zaten çıkarken kaydedecektim de unutmam artık"
-                  rescue Exception => e
-                      logger("EXCEPTION: Sokulabilir nesneleri kaydederken hata: #{e}")
-                      reply = "Kaydedemedim be kardeş, durumum yoktu.."
-                  end
-                when /^\/tamogren/i
-                  begin
-                      File.open('assets/learned.json', "w+") do |f|
-                          f << JSON.pretty_generate($learned)
-                      end
-                      logger("DEBUG: #{$learned.length} öğrenilen yanıt kaydedildi.")
-                      reply = "Tamamdır kardeş #{$learned.length} tane öğrendiğimi kaydettim, zaten çıkarken kaydedecektim de unutmam artık"
-                  rescue Exception => e
-                      logger("EXCEPTION: Öğrenilen yanıtları kaydederken hata: #{e}")
-                      reply = "Kaydedemedim be kardeş, durumum yoktu.."
-                  end
-                when /^\/eklediyalog/i
-                  reply = diyalog_ekle(message.text)
+        # Send messages/photos, if it exists
+        unless image.to_s.strip.empty?
+          logger ">>> chat##{message.chat.id} #{message.from.id}@#{message.from.username}: IMG #{image}"
+          if $images.has_key?(image) then bot.api.send_photo(chat_id: message.chat.id, photo: $images[image])
+          else
+            sent = bot.api.send_photo(chat_id: message.chat.id, photo: Faraday::UploadIO.new(image, 'image/jpg'))
+            $images[image] = sent['result']['photo'][sent['result']['photo'].length - 1]['file_id']
+          end
+        end
 
-
-				# Priority 2: Active replies
-				when /^Sana girsin$/i then reply = "Sana da " + $insertable.sample.strip.downcase + " girsin"
-				when /^Mert Kore'de saat kaç$/i then reply = "Kardeş Kore şuan " + DateTime.now.new_offset('+09:00').strftime("%H:%M")
-				when /^Mert isim salla$/i then reply = File.readlines("assets/isimler").sample.strip.capitalize + " nasıl"
-				when /(görüyon mu)$|(görüyor musun)$/i then reply = geri_sok(message.text) + " sana girsin"
-                when /tamam mı$/i then reply = ["Tamam olur", "Olmaz aq", "Olabilir", "Bana ne soruyon aq", "Olurmaz", "Olmazur"].sample
-				when /(Canım sıkılıyor)$|(canım sıkıldı)$/i
-					reply = "Sıkma canını kardeeş"
-					image = $caricatures.sample
-				when /([asdfghjklşi]){6}\w+/i then reply = ["ksdjfksdjfskd", "jhzdkjfhskjdfhks", "jsdhfjksdhfkjsdh", "ksdkjfsjdlkfjskl", "shdjkfhsdkf", "Jdhkjfhslkjh", "Hsdjfhsdkjf", "Kksdjfkds", "dkajflaskdjf", "kjdsalfjaldksfjalk", "sdkjlsdfjl", "dsaşfkjsaldf", "sakjdkasjd", "dsşafjasdkfs"].sample
-				when /^Mert senin moralini sikeyim$/i
-					if $morale > 0
-						$morale -= 50
-					end
-					reply = "Ben de senin moralini sikeyim aq"
-				when /^Mert senin moralini seveyim$/i
-					if $morale < 100
-						$morale += 50
-					end
-					reply = "Eyvallah kardeşim"
-				when /^Mert moralin nasıl$/i
-					case $morale
-					when 0 then reply = "Moralim çok bozuk be"
-					when 50 then reply = "İyi diyelim iyi olsun"
-					when 100 then reply = "Çok güzel bir gün, götüme çiçek sokasım var be"
-					end
-				when /^Mert senden nefret ediyorum$/i
-                  if not $love.has_key?(message.from.id)
-                    $love[message.from.id] = 0
-                  end
-
-					if $love[message.from.id] > -50
-						$love[message.from.id] -= 50
-					end
-					reply = "Ben de senden amk"
-				when /^Mert seviyorum seni$/i
-                  if not $love.has_key?(message.from.id)
-                    $love[message.from.id] = 0
-                  end
-
-					if $love[message.from.id] < 50
-						$love[message.from.id] += 50
-					end
-					reply = "Ben de seni seviyorum kardeşim"
-				when /^Mert beni seviyor musun$/i
-					case $love[message.from.id]
-					when -50 then reply = "Hayır :d"
-					when 50 then reply = "Tabii seviyorum oğlum kardeşimsin"
-					else
-						reply = "İyisin be kardeş"
-						$love[message.from.id] = 0
-					end
-
-				# Priority 3: Dialog system
-				else
-					time = Benchmark.measure do
-						reply = diyalog_kur(message.from.id, message.text)
-					end
-					logger("BENCHMARK: Diyalog: #{time}")
-				end
-
-                # Priority 4: Command handling system
-                if reply.to_s.strip.empty?
-                  reply = handle_cmd(message.chat.id, message.text)
-                end
-
-				# Priority 5: Words
-				if reply.to_s.strip.empty?
-					case message.text
-					when /\bMert\b/i then reply = ["Adım geçti sanki lan", "Şşt arkamdan konuşmayın", "Mert dedin devamını getir kardeş", "Söyle söyle çekinme", "Nediir", "Vıyy", "Ne diyorsen"].sample
-					when /\bam am\b/i then reply = "Hani bize am"
-					end
-				end
-
-                # Priority 6: Learned replies
-                if reply.to_s.strip.empty?
-                  unless message.text.to_s.strip.empty?
-                    if ($learned.has_key?(message.text.downcase))
-                      reply = $learned[message.text.downcase]
-                    end
-                  end
-                end
-
-				# Send messages/photos, if it exists
-				unless image.to_s.strip.empty?
-					logger ">>> chat##{message.chat.id} #{message.from.id}@#{message.from.username}: IMG #{image}"
-					if $images.has_key?(image) then bot.api.send_photo(chat_id: message.chat.id, photo: $images[image])
-					else
-						sent = bot.api.send_photo(chat_id: message.chat.id, photo: Faraday::UploadIO.new(image, 'image/jpg'))
-						$images[image] = sent['result']['photo'][sent['result']['photo'].length - 1]['file_id']
-					end
-				end
-
-				unless reply.to_s.strip.empty?
-					logger ">>> chat##{message.chat.id} #{message.from.id}@#{message.from.username}: #{reply}"
-					bot.api.send_message(chat_id: message.chat.id, text: reply)
-				end
-			end
-		end
-	end
+        unless reply.to_s.strip.empty?
+          logger ">>> chat##{message.chat.id} #{message.from.id}@#{message.from.username}: #{reply}"
+          bot.api.send_message(chat_id: message.chat.id, text: reply)
+        end
+      end
+    end
+  end
 rescue SystemExit
-    logger("EXCEPTION: SystemExit")
+  logger("EXCEPTION: SystemExit")
 rescue Faraday::ConnectionFailed => e
-	logger("EXCEPTION: #{e}")
-    retries += 1
-    sleep_time = retries * 10
-    if sleep_time > 60 then sleep_time 60 end
-    logger("EXCEPTION: RETRY: #{retries}; #{sleep_time} saniye bekleniyor...")
-    sleep sleep_time
-    retry
+  logger("EXCEPTION: #{e}")
+  retries += 1
+  sleep_time = retries * 10
+  if sleep_time > 60 then sleep_time 60 end
+  logger("EXCEPTION: RETRY: #{retries}; #{sleep_time} saniye bekleniyor...")
+  sleep sleep_time
+  retry
 rescue Exception => e
-    logger "EXCEPTION: #{e}"
+  logger "EXCEPTION: #{e}"
 end
 
 logger("Buruki uyumaya gidiyor..")
