@@ -7,7 +7,7 @@ require 'benchmark'
 
 # Pure
 def logger(text)
-	puts "#{DateTime.now} #{text}"
+    puts "#{DateTime.now} #{text}"
 	open('logs/buruki.log', 'a') { |f|
 		f.puts "#{DateTime.now} #{text}"
 	}
@@ -32,8 +32,7 @@ begin
 	$images = JSON.load_file('assets/image_hashes.json')
 	logger("DEBUG: #{$images.length} fotoğraf kimliği dosyadan yüklendi.")
 rescue
-	$images = {
-	}
+    $images = Hash.new
 	logger("DEBUG: Fotoğraf kimlikleri yüklenemedi! Yenisi yaratıldı.")
 end
 
@@ -258,48 +257,31 @@ def lanogren(msg)
   end
 end
 
-def imghashes
+def json_to_file(var, file, description, :replymode = false)
   begin
-      File.open('assets/image_hashes.json', "w+") do |f|
-          f << JSON.pretty_generate($images)
+      File.open(file, "w+") do |f|
+          f << JSON.pretty_generate(var)
       end
-      logger("DEBUG: #{$images.length} fotoğraf kimliği kaydedildi.")
+      logger("DEBUG: #{var.length} adet #{description.to_s.downcase} kaydedildi.")
   rescue Exception => e
-      logger("EXCEPTION: Fotoğraf kimliği kaydederken hata: #{e}")
+      logger("EXCEPTION: #{description.to_s.capitalize} kaydı sırasında hata: #{e}")
   end
+end
+
+def imghashes
+  json_to_file($images, "assets/image_hashes.json", "fotoğraf kimliği")
 end
 
 def tamogren
-  begin
-      File.open('assets/learned.json', "w+") do |f|
-          f << JSON.pretty_generate($learned)
-      end
-      logger("DEBUG: #{$learned.length} öğrenilen yanıt kaydedildi.")
-  rescue Exception => e
-      logger("EXCEPTION: Öğrenilen yanıtları kaydederken hata: #{e}")
-  end
+  json_to_file($learned, "assets/learned.json", "öğrenilen yanıt")
 end
 
 def tamsokekle
-  begin
-      File.open('assets/insertable.json', "w+") do |f|
-          f << JSON.pretty_generate($insertable)
-      end
-      logger("DEBUG: #{$insertable.length} adet sokulabilir nesne kaydedildi.")
-  rescue Exception => e
-      logger("EXCEPTION: Sokulabilir nesneleri kaydederken hata: #{e}")
-  end
+  json_to_file($insertable, "assets/insertable.json", "sokulabilir nesne")
 end
 
 def kafayigom
-  begin
-      File.open('assets/dialog.json', "w+") do |f|
-          f << JSON.pretty_generate($dialog)
-      end
-      logger("DEBUG: #{$dialog.length} diyalog kaydedildi.")
-  rescue Exception => e
-      logger("EXCEPTION: Diyalogları kaydederken hata: #{e}")
-  end
+  json_to_file($dialog, "assets/dialog.json", "diyalog")
 end
 
 def son_getir(chat_id)
