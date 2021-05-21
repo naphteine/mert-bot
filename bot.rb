@@ -4,6 +4,7 @@ require 'lingua/stemmer'
 require 'rufus-scheduler'
 require 'json'
 require 'benchmark'
+require 'turkish_cities'
 
 # Pure
 def logger(text)
@@ -206,6 +207,7 @@ def awake
   return output
 end
 
+# Learning methods
 def ogren(msg, splitter: ",")
   begin
     splitted = msg.split(splitter)
@@ -242,6 +244,7 @@ def sokekle(msg)
   end
 end
 
+# Saving methods
 def lanogren(msg, splitter: ",")
   begin
     splitted = msg.split(splitter)
@@ -297,6 +300,7 @@ def kafayicek
   end
 end
 
+# Last message methods
 def son_getir(chat_id)
   begin
     if $last.has_key?(chat_id)
@@ -313,6 +317,7 @@ def son_guncelle(chat_id, msg)
   $last[chat_id] = msg;
 end
 
+# String operations
 def cevir(chat_id, msg)
   if msg =~ /\/son$/
     cevirilecek = son_getir(chat_id)
@@ -355,6 +360,90 @@ def karisik(chat_id, msg)
   return cevirilecek.split.shuffle.join(" ")
 end
 
+# City methods
+def city_km(input)
+  splitted = input.split
+
+  if splitted[0].to_s.strip.downcase == "mert"
+    splitted.shift
+  end
+
+  if splitted.length == 1
+    if splitted[0] == "Ankara"
+      return "Şehir içi amk onu da dolmuşçulara sor"
+    else
+      km = TurkishCities.distance_between('Ankara', splitted[0], 'land')[0]
+      return "#{km} km kardeş"
+    end
+  elsif splitted.length >= 2
+    if splitted[0] == splitted[1]
+      return "Aynı şehir la git dolmuşçulara sor amk"
+    else
+      km = TurkishCities.distance_between(splitted[0], splitted[1], 'land')[0]
+      return "#{km} km kardeş"
+    end
+  else
+    return "Böyle olmaz"
+  end
+end
+
+def city_plate(input)
+  begin
+    splitted = input.split
+
+    if splitted[0].to_s.strip.downcase == "mert"
+      splitted.shift
+    end
+
+    if splitted.length >= 1
+      code = TurkishCities.find_name_by_plate_number(splitted[0].to_i)
+      if code.to_s.strip.empty?
+        return "Bilmiyorum kardeş"
+      end
+
+      if code.start_with?("Couldn't")
+        return "Bilmiyorum kardeş"
+      end
+      
+      return "Kardeş #{splitted[0]} #{code} diye biliyorum"
+    else
+      return "Böyle olmaz"
+    end
+  rescue Exception => e
+    return "O neresi ki lan"
+  end
+end
+
+
+
+def city_phone(input)
+  begin
+    splitted = input.split
+
+    if splitted[0].to_s.strip.downcase == "mert"
+      splitted.shift
+    end
+
+    if splitted.length >= 1
+      code = TurkishCities.find_name_by_phone_code(splitted[0].to_i)
+      if code.to_s.strip.empty?
+        return "Bilmiyorum kardeş"
+      end
+
+      if code.start_with?("Couldn't")
+        return "Bilmiyorum kardeş"
+      end
+      
+      return "Kardeş #{splitted[0]} #{code} diye biliyorum"
+    else
+      return "Böyle olmaz"
+    end
+  rescue Exception => e
+    return "O neresi ki lan"
+  end
+end
+
+# Input processing methods
 def handle_cmd(chat_id, input)
   begin
     # Check if it's really a command (i.e. starts with a slash)
@@ -419,7 +508,7 @@ def handle_cmd(chat_id, input)
   end
 end
 
-def active_response(msg)
+def active_response(user_id, msg)
   case msg
   when /^Sana girsin$/i
     return "Sana da " + $insertable.sample.strip.downcase + " girsin"
@@ -428,12 +517,12 @@ def active_response(msg)
   when /^Mert isim salla$/i
     return File.readlines("assets/isimler").sample.strip.capitalize + " nasıl"
   when /(görüyon mu)$|(görüyor musun)$/i
-    return geri_sok(message.text) + " sana girsin"
+    return geri_sok(msg) + " sana girsin"
   when /tamam mı$/i
     return ["Tamam olur", "Olmaz aq", "Olabilir", "Bana ne soruyon aq", "Olurmaz", "Olmazur"].sample
   when /(Canım sıkılıyor)$|(canım sıkıldı)$/i
     return "Sıkma canını kardeeş", $caricatures.sample
-  when /([asdfghjklşi]){6}\w+/i
+  when /([asdfghjklşi]){8}\w+/i
     return ["ksdjfksdjfskd", "jhzdkjfhskjdfhks", "jsdhfjksdhfkjsdh", "ksdkjfsjdlkfjskl", "shdjkfhsdkf", "Jdhkjfhslkjh", "Hsdjfhsdkjf", "Kksdjfkds", "dkajflaskdjf", "kjdsalfjaldksfjalk", "sdkjlsdfjl", "dsaşfkjsaldf", "sakjdkasjd", "dsşafjasdkfs"].sample
   when /^Mert senin moralini sikeyim$/i
     if $morale > 0
@@ -455,35 +544,41 @@ def active_response(msg)
       return "Çok güzel bir gün, götüme çiçek sokasım var be"
     end
   when /^Mert senden nefret ediyorum$/i
-    if not $love.has_key?(message.from.id)
-      $love[message.from.id] = 0
+    if not $love.has_key?(user_id)
+      $love[user_id] = 0
     end
 
-    if $love[message.from.id] > -50
-      $love[message.from.id] -= 50
+    if $love[user_id] > -50
+      $love[user_id] -= 50
     end
     
     return "Ben de senden amk"
   when /^Mert seviyorum seni$/i
-    if not $love.has_key?(message.from.id)
-      $love[message.from.id] = 0
+    if not $love.has_key?(user_id)
+      $love[user_id] = 0
     end
 
-    if $love[message.from.id] < 50
-      $love[message.from.id] += 50
+    if $love[user_id] < 50
+      $love[user_id] += 50
     end
 
     return "Ben de seni seviyorum kardeşim"
   when /^Mert beni seviyor musun$/i
-    case $love[message.from.id]
+    case $love[user_id]
     when -50
       return "Hayır :d"
     when 50
       return "Tabii seviyorum oğlum kardeşimsin"
     else
-      $love[message.from.id] = 0
+      $love[user_id] = 0
       return "İyisin be kardeş"
     end
+  when/(arası kaç km)$|(arası kaç kilometre)$/i
+    return city_km(msg)
+  when/(nerenin plakası)$|(plakası nerenin)$/i
+    return city_plate(msg)
+  when/(nerenin telefon kodu)$|(telefon kodu nerenin)$/i
+    return city_phone(msg)
   end
 end
 
@@ -541,7 +636,7 @@ def main
 
           # Check if it's really a message
           if message.text.to_s.strip.empty?
-            return
+            next
           end
 
           # Update last message hash
@@ -555,9 +650,16 @@ def main
 
           ## Priority 2: Active responses
           if reply.to_s.strip.empty?
-            rt = active_response(message.text)
-            reply = rt[0]
-            image = rt[1]
+            rt = active_response(message.from.id, message.text)
+
+            unless rt.nil?
+              if rt.kind_of?(Array)
+                reply = rt[0]
+                image = rt[1]
+              else
+                reply = rt
+              end
+            end
           end
 
           ## Priority 3: Dialog system
@@ -584,12 +686,18 @@ def main
           end
 
           # Send messages/photos, if it exists
-          unless image.zero? or image.to_s.strip.empty?
+          unless image.nil? or image.to_s.strip.empty?
             logger ">>> chat##{message.chat.id} #{message.from.id}@#{message.from.username}: IMG #{image}"
-            if $images.has_key?(image) then bot.api.send_photo(chat_id: message.chat.id, photo: $images[image])
-            else
-              sent = bot.api.send_photo(chat_id: message.chat.id, photo: Faraday::UploadIO.new(image, 'image/jpg'))
-              $images[image] = sent['result']['photo'][sent['result']['photo'].length - 1]['file_id']
+
+            begin
+              if $images.has_key?(image)
+                bot.api.send_photo(chat_id: message.chat.id, photo: $images[image])
+              else
+                sent = bot.api.send_photo(chat_id: message.chat.id, photo: Faraday::UploadIO.new(image, 'image/jpg'))
+                $images[image] = sent['result']['photo'][sent['result']['photo'].length - 1]['file_id']
+              end
+            rescue Exception => e
+              logger "EXCEPTION: #{e}"
             end
           end
 
