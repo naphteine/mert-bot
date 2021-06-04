@@ -606,10 +606,7 @@ def main
         $autojob = $scheduler.every '8110s' do
           tamogren()
           imghashes()
-
-          reply = ["Yine çok neşelisiniz amk yazın hadi", "Amına koyem yazın gençlik", "Yine çok neşelisiniz. Yazsanıza aq", "Anlatın amk", "Saat #{DateTime.now.strftime("%H:%M")} olmuş, napıyorsunuz gençler"].sample
-          logger ">>> chat##{$master_chat_id}: #{reply}"
-          bot.api.send_message(chat_id:  $master_chat_id, text: reply)
+          logger "Scheduler: Veriler kaydedildi"
         end
       end
 
