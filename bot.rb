@@ -5,6 +5,7 @@ require 'rufus-scheduler'
 require 'json'
 require 'benchmark'
 require 'turkish_cities'
+require 'yaml'
 
 # Pure
 def logger(text)
@@ -627,9 +628,11 @@ def main
             )
           end
           bot.api.answer_inline_query(inline_query_id: message.id, results: results, cache_time: 5)
+	  logger "MESSAGE #{message.to_yaml}"
           logger "InlineQuery activity!"
         when Telegram::Bot::Types::Message
-          logger "chat##{message.chat.id} #{message.from.id}@#{message.from.username}: #{message.text}"
+	  logger "MESSAGE #{message.to_yaml}"
+	  logger "chat##{message.chat.id} #{message.from.id}@#{message.from.username}: #{message.text}"
 
           # Check if it's really a message
           if message.text.to_s.strip.empty?

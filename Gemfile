@@ -7,3 +7,5 @@ gem "ruby-stemmer", "~> 3.0"
 gem "rufus-scheduler", "~> 3.7"
 
 gem "turkish_cities", "~> 0.4.0"
+
+gem "sqlite3", "~> 1.4"
